@@ -2,7 +2,7 @@ import os
 import threading
 from typing import Literal
 from dotenv import load_dotenv
-from serpapi import GoogleSearch
+import serpapi
 from newspaper import Article, Config
 from newspaper.article import ArticleException
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -11,6 +11,7 @@ from selenium.webdriver import ChromeOptions
 
 load_dotenv()
 serp_api_key = os.environ.get('SERP_API_KEY')
+serp_client = serpapi.Client(api_key=serp_api_key)
 
 def get_selenium_html(url):
     with threading.Lock():
@@ -88,7 +89,7 @@ def get_serp_stories(story_token:str):
     "json_restrictor": "news_results[].stories[].{source.name, title, link, iso_date}, news_results[].{source.name, title, link, iso_date}"
     }
 
-    search = GoogleSearch(params)
+    search = serp_client.search(params)
     #print(search.get_dict())
 
     stories = []
