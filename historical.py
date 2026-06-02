@@ -50,7 +50,7 @@ def source_correction(row):
 def load_global_data():
     global HISTORICAL_DF
     if HISTORICAL_DF is None:
-        df = pd.read_parquet('Browser Extension/Backend/data/historical/elections_opinions_annotated_new.parquet')
+        df = pd.read_parquet('data/historical/elections_opinions_annotated_new.parquet')
         df['publish_date'] = pd.to_datetime(df['publish_date'])
         #df['vectors'] = df['vectors'].apply(parse_nparray_str)
         df = df.apply(source_correction, axis=1)
@@ -60,7 +60,7 @@ def load_global_data():
 
 '''def process_data() -> pd.DataFrame: 
     # modularizing this, so when more datasets are added we can merge their data
-    elec_data = pd.read_csv('Browser Extension/Backend/data/historical/elections_annotated_vectors.csv')
+    elec_data = pd.read_csv('data/historical/elections_annotated_vectors.csv')
     elec_data.apply(source_correction, axis=1)
 
     elec_data['vectors'] = elec_data['vectors'].apply(parse_nparray_str) # pyright: ignore[reportCallIssue, reportArgumentType]

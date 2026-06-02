@@ -1,7 +1,11 @@
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from nicegui import ui, app
 from datetime import datetime as dt
+from spacy.cli import download
 
 from historical import get_cumulative_stance_data, assign_stance
 import visualization
@@ -9,6 +13,7 @@ import visualization
 from process import get_full_stories, request_serp_match
 from current import batch_nlp, label_stories
 
+download("en_core_web_trf")
 api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
 
 

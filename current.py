@@ -46,7 +46,7 @@ OPP = {
     'CPIML'
 }
 
-df_corpus = pd.read_json('Browser Extension/Backend/data/current/nivaduck_with_display_names.json')
+df_corpus = pd.read_json('data/current/nivaduck_with_display_names.json')
 df_corpus = df_corpus.dropna(subset='display_name')
 corpus = df_corpus['display_name'].to_dict()
 
