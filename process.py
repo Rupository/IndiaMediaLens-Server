@@ -90,11 +90,9 @@ def get_serp_stories(story_token:str):
     }
 
     search = serp_client.search(params)
-    #print(search.get_dict())
-
     stories = []
 
-    for heading in search.get_dict()["news_results"]:
+    for heading in search["news_results"]:
         if heading.get('title') == 'Posts on X':
             continue
 

@@ -1,6 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+import traceback
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from nicegui import ui, app
@@ -86,6 +87,7 @@ async def historical_colour(request_data: ColourRequest):
         raise HTTPException(status_code=504, detail="Request timeout")
     
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @ui.page("/historical/visualization/{outlet}")
