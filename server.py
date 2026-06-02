@@ -9,7 +9,7 @@ import visualization
 from process import get_full_stories, request_serp_match
 from current import batch_nlp, label_stories
 
-api = FastAPI(title="MediaLens Server API", version="0.8.1")
+api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
 
 
 class ColourRequest(BaseModel):

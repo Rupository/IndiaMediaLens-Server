@@ -1,2 +1,2 @@
-# IndiaMediaLens-ViewFinder-Server
-Backend for ViewFinder, the plugin for the IndiaMediaLens Project
+# IndiaMediaLens Server
+Currently this serves as the backend for ViewFinder, the plugin for the IndiaMediaLens Project
