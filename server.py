@@ -1,20 +1,21 @@
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import traceback
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from nicegui import ui, app
 from datetime import datetime as dt
-from spacy.cli import download
 
 from historical import get_cumulative_stance_data, assign_stance
 import visualization
 
-from process import get_full_stories, request_serp_match
-from current import batch_nlp, label_stories
+from current import get_full_stories, request_serp_match
+from gpu_nlp import stories_with_nlp
 
-download("en_core_web_trf")
 api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
 
 
@@ -39,7 +40,7 @@ def startup_event():
     }
 )
 
-async def historical_colour(request_data: ColourRequest):
+def historical_colour(request_data: ColourRequest):
     """
     Return coloured sqaures 
     """
@@ -55,8 +56,7 @@ async def historical_colour(request_data: ColourRequest):
     try:
         print("Fetching colours...", end='\n\n\n')
         serp_stories = get_full_stories(story_token)
-        DATA, TRACKER, SENTS = batch_nlp(serp_stories, 'EST')
-        labeled_serp_stories = label_stories(serp_stories, 'EST', DATA, TRACKER, SENTS)
+        labeled_serp_stories = stories_with_nlp()
         current_est_stances = request_serp_match(request_stories, labeled_serp_stories, 'EST_label')
 
         historical_est_stances = assign_stance(request_stories, cumulative_stance_data)

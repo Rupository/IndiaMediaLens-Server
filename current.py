@@ -1,174 +1,159 @@
-import spacy
-from spacy.language import Language
-from spacy.tokens import Span
-import pandas as pd
-from thefuzz import fuzz, process
-from NewsSentiment import TargetSentimentClassifier
-import numpy as np
+import os
+import threading
 from typing import Literal
+from dotenv import load_dotenv
+import serpapi
+from newspaper import Article, Config
+from newspaper.article import ArticleException
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from selenium import webdriver
+from selenium.webdriver import ChromeOptions
 
-newsmtsc_classifier = TargetSentimentClassifier()
+load_dotenv()
+serp_api_key = os.environ.get('SERP_API_KEY')
+serp_client = serpapi.Client(api_key=serp_api_key)
 
-EST = {
-    'BJP',
-    'AIADMK',
-    'GOV',
-    'NCP',
-    'ABVP',
-    'TDP',
-    'AMMK',
-    'JDU',
-    'RSS',
-    'JDS',
-    'MNS',
-    'LJP',
-    'VHP'
-}
+def get_selenium_html(url):
+    with threading.Lock():
+        with webdriver.Chrome(options=options) as driver: 
+            driver.get(url)
+            article_html = driver.page_source
+        return article_html
 
-OPP = {
-    'INC',
-    'DMK',
-    'AAP',
-    'SP',
-    'SAMAJWADI',
-    'SAMAJWADI ',
-    'BJD',
-    'TRS',
-    'CPIM',
-    'AITC',
-    'TMC',
-    'RJD',
-    'AIMIM',
-    'JKNC',
-    'BSP',
-    'JKPDP',
-    'JMM',
-    'CPIML'
-}
+options = ChromeOptions()
+options.page_load_strategy = 'eager'
+options.add_argument("--headless=new")
 
-df_corpus = pd.read_json('data/current/nivaduck_with_display_names.json')
-df_corpus = df_corpus.dropna(subset='display_name')
-corpus = df_corpus['display_name'].to_dict()
+config = Config()
+config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124  Safari/537.36'
+config.request_timeout = 20
 
-nlp = spacy.load('en_core_web_trf')
-@Language.component("fuzzy_affiliation")
-def fuzzy_affiliates(doc):
-    ents = []
+def parse_url(url) -> str | None:
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+
+        text = " ".join(article.text.split()[:200])
+        if text == '':
+            raise LookupError(f"First Attempt: Unable to extact article text for {url}. Retrying...") # if fail, go into second try
+
+        return text
     
-    for ent in doc.ents:
-        if ent.label_ not in {"PERSON", "ORG"}:
-            ents.append(ent)
-            continue
-        
-        match = process.extractOne(ent.text, corpus, scorer=fuzz.ratio, score_cutoff=95)
+    except (ArticleException, LookupError) as e1:
+        try:
+            if str(e1).find('403') != -1 or isinstance(e1, LookupError):
+                article = Article(url, config=config)
+                article.download()
+                article.parse()
 
-        if not match:
-            ents.append(ent)
-            continue
-
-        _, _, index =  match # pyright: ignore[reportAssignmentType]
-        party = str(df_corpus.loc[index, 'party'])
-
-        if party in EST:
-            aff = 'EST'
-        elif party in OPP:
-            aff = 'OPP'
-        else:
-            ents.append(ent)
-            continue
-        
-        new_ent = Span(doc, ent.start, ent.end, label=aff)
-        ents.append(new_ent)
+                text = " ".join(article.text.split()[:200])
+                if text == '':
+                    raise LookupError(f"Second Attempt: Unable to extact article text for {url}. Retrying...") # if fail, go into third try
+                else:
+                    print(f'Retry succeeded for {url}!')
+                
+                return text
             
-    doc.ents = ents
-    return doc
+            else:
+                print(e1)
+                return ''
+            
+        except (ArticleException, LookupError) as e2:
+            if str(e2).find('403') != -1 or isinstance(e2, LookupError):
+                article = Article(url, config=config)
+                article.download(input_html = get_selenium_html(url))
+                article.parse()
+                text = " ".join(article.text.split()[:200])
+                if text == '':
+                    text = ''
+                    print(f"Final Attempt: Unable to extact article text for {url}") # if it still fails, can't circumvent.
+                else:
+                    print(f'Retry succeeded for {url}!')
+                
+                return text
 
-nlp.add_pipe("fuzzy_affiliation", after='ner')
-
-def batch_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], batch_size=16):
-    data = []
-    texts = [story.get('text', '') for story in stories]
-    #for text in texts: print(text, end='\n\n')
-    story_datapoints_tracker = [] # for the story at the i'th index, how many newsmtsc tuples it has
+            else:
+                print(e2)
+                return ''
     
-    for doc in nlp.pipe(texts, batch_size=batch_size):
-        data_count = 0
 
-        for ent in doc.ents:
-            if ent.label_ == entity_type:
-                sentence = ent.sent
-                left = doc.text[sentence.start_char : ent.start_char]
-                entity_str = ent.text
-                right= doc.text[ent.end_char : sentence.end_char]
+def get_serp_stories(story_token:str):
+    params = {
+    "engine": "google_news",
+    "gl": "in",
+    "hl": "en",
+    "story_token": story_token,
+    "api_key": f"{serp_api_key}",
+    #"no_cache": "true",
+    "json_restrictor": "news_results[].stories[].{source.name, title, link, iso_date}, news_results[].{source.name, title, link, iso_date}"
+    }
 
-                data.append((left, entity_str, right))
-                data_count += 1
-        
-        story_datapoints_tracker.append(data_count)
-    
-    if data:
+    search = serp_client.search(params)
+    stories = []
 
-        sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size)
-        return data, story_datapoints_tracker, sentiments
-    
-    else:
-
-        print("Could not find ANY relavant entities!")
-        return [], [], []
-
-
-def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'],
-                  data, story_datapoints_tracker, sentiments):
-    
-    print()
-    print(data)
-    print()
-
-    label = f'{entity_type}_label'
-    if data == []:
-        for story in stories:
-            story[label] = 'unknown'
-        return stories
-    
-    i = 0
-    for story, k in zip(stories, story_datapoints_tracker):
-
-        vectors = []
-
-        for datapoint, sentiment in zip(data[i:i+k],sentiments[i:i+k]):
-            probs = {item['class_label']: item['class_prob'] for item in sentiment}
-
-            if max(probs.values()) < 0.75: continue
-
-            vector = [probs['positive'], probs['neutral'], probs['negative']]
-            print(datapoint)
-            print(vector)
-            vectors.append(vector)
-        
-        if not vectors:
-            story[label] = 'unknown'
-            i += k
+    for heading in search["news_results"]:
+        if heading.get('title') == 'Posts on X':
             continue
 
-        print()
+        results = heading.get('stories', [heading])
 
-        vectors = np.array(vectors)
-        article_vec = np.mean(vectors, axis=0)
-        print('Outlet:', story['outlet'])
-        print('URL:', story['url'])
-        print('Article Vector:', article_vec)
-        class_index = np.argmax(article_vec)
+        for story in results:
+            stories.append({
+                'title': story.get('title'),
+                'outlet': story.get('source').get('name'),
+                'url': story.get('link'),
+                'publish_date': story.get('iso_date').partition('T')[0]
+                })
+            
+    return stories
 
-        if class_index == 0:
-            story[label] = 'pro'
-        elif class_index == 1:
-            story[label] = 'neutral'
-        elif class_index == 2:
-            story[label] = 'anti'
-        print('ENT_label:', story[label])
-        
-        i += k
-        print()
-        print()
+def parse_stories(stories:list[dict[str,str]]):
+    for story in stories:
+        url = story.get('url')
+        text = parse_url(url)
+        story['text'] = text if text is not None else ''
     
     return stories
+
+def parse_stories_parallel(stories, max_threads=80):
+    
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        future_to_story = {
+            executor.submit(parse_url, story['url']): story 
+            for story in stories
+        }
+        
+        for future in as_completed(future_to_story):
+            story = future_to_story[future]
+            try:
+                text = future.result()
+                story['text'] = text
+                
+            except Exception as e:
+                print(f"Unexpected failure processing {story['url']}: {e}")
+                story['text'] = ''
+
+    return stories
+
+def get_full_stories(story_token:str):
+    stories = get_serp_stories(story_token)
+    return parse_stories_parallel(stories)
+
+def request_serp_match(request_stories:dict[str,str], serp_stories:list[dict[str,str]], 
+                       assign_key:Literal['EST_label', 'OPP_label']):
+    
+    serp_set = {story['title'] for story in serp_stories}
+    request_set = set(request_stories.keys())
+    intersection = serp_set & request_set
+
+    final_stories = dict[str,str]()
+
+    for story in serp_stories:
+        title = story['title']
+        if title in intersection:
+            final_stories[title] = story[assign_key]
+    
+    return final_stories
+    
+
