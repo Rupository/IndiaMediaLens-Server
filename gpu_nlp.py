@@ -6,17 +6,19 @@ if modal.is_local():
     load_dotenv()
 
 container = (
-    modal.Image.debian_slim(python_version="3.10")
+    modal.Image.from_registry("nvidia/cuda:12.4.0-devel-ubuntu22.04", add_python="3.10")
     .pip_install(
-        "cupy-cuda11x",
-        "spacy[cuda11x]",
+        "cupy-cuda12x",
+        "spacy[cuda12x]",
         "NewsSentiment",
         "pandas",
         "numpy",
         "thefuzz",
-        "typing"
+        "typing",
+        "sentencepiece"
     )
     .run_commands(
+        "python -m spacy download en_core_web_sm",
         "python -m spacy download en_core_web_trf"
     )
     .add_local_file('data/current/nivaduck_with_display_names.json', '/mnt/data/current/nivaduck_with_display_names.json')
@@ -25,6 +27,9 @@ container = (
 app = modal.App("ViewFinderNLP")
 
 if not modal.is_local():
+    import warnings
+    warnings.filterwarnings("ignore", category=FutureWarning)
+
     import spacy
     from spacy.language import Language
     from spacy.tokens import Span
@@ -211,6 +216,7 @@ def test_env():
     from NewsSentiment import TargetSentimentClassifier
     import spacy
 
+    print("HELLO!!!!")
     newsmtsc_classifier = TargetSentimentClassifier()
     print(torch.cuda.get_device_name(0))
     print(spacy.require_gpu())
