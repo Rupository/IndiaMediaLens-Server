@@ -11,7 +11,7 @@ from historical import get_cumulative_stance_data, assign_stance
 import visualization
 
 from current import get_full_stories, request_serp_match
-from gpu_nlp import stories_with_nlp
+from gpu_nlp import NLP_processor
 
 api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
 
@@ -53,7 +53,7 @@ def historical_colour(request_data: ColourRequest):
     try:
         print("Fetching colours...", end='\n\n\n')
         serp_stories = get_full_stories(story_token)
-        labeled_serp_stories = stories_with_nlp()
+        labeled_serp_stories = NLP_processor().process_stories.remote(serp_stories, 'EST')
         current_est_stances = request_serp_match(request_stories, labeled_serp_stories, 'EST_label')
 
         historical_est_stances = assign_stance(request_stories, cumulative_stance_data)
