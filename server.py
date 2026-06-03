@@ -53,7 +53,7 @@ def historical_colour(request_data: ColourRequest):
     try:
         print("Fetching colours...", end='\n\n\n')
         serp_stories = get_full_stories(story_token)
-        labeled_serp_stories = NLP_processor().process_stories.remote(serp_stories, 'EST')
+        labeled_serp_stories = NLP_processor().stories_with_nlp.remote(serp_stories, 'EST')
         current_est_stances = request_serp_match(request_stories, labeled_serp_stories, 'EST_label')
 
         historical_est_stances = assign_stance(request_stories, cumulative_stance_data)
