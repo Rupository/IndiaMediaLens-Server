@@ -1,6 +1,10 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
+from dotenv import load_dotenv
+load_dotenv()
+
+import modal
 import traceback
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -13,8 +17,8 @@ import visualization
 from current import get_full_stories, request_serp_match
 from gpu_nlp import NLP_processor
 
+NLP_processor = modal.Cls.from_name("ViewFinderNLP", "NLP_processor")
 api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
-
 
 class ColourRequest(BaseModel):
     story_token: str
