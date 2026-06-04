@@ -1,4 +1,5 @@
 import os
+import asyncio
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import warnings
@@ -13,7 +14,7 @@ from datetime import datetime as dt
 from historical import get_cumulative_stance_data, assign_stance
 import visualization
 
-from current import get_full_stories, request_serp_match
+from current import get_full_stories, request_serp_match, shutdown_selenium_pool
 from nlp import stories_with_nlp
 
 api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
@@ -30,6 +31,10 @@ def startup_event():
     global cumulative_stance_data
     cumulative_stance_data = get_cumulative_stance_data(start_date=dt(2019, 1, 1), end_date=dt(2024, 12, 31))
 
+@app.on_shutdown
+def shutdown_event():
+    shutdown_selenium_pool()
+
 @api.post(
     "/api/v0/colour",
     response_model=dict,
@@ -39,7 +44,7 @@ def startup_event():
     }
 )
 
-def historical_colour(request_data: ColourRequest):
+async def historical_colour(request_data: ColourRequest):
     """
     Return coloured sqaures 
     """
@@ -54,8 +59,8 @@ def historical_colour(request_data: ColourRequest):
 
     try:
         print("Fetching colours...", end='\n\n\n')
-        serp_stories = get_full_stories(story_token)
-        labeled_serp_stories = stories_with_nlp(serp_stories, 'EST')
+        serp_stories = await asyncio.to_thread(get_full_stories, story_token)
+        labeled_serp_stories = await asyncio.to_thread(stories_with_nlp, serp_stories, 'EST')
         current_est_stances = request_serp_match(request_stories, labeled_serp_stories, 'EST_label')
 
         historical_est_stances = assign_stance(request_stories, cumulative_stance_data)

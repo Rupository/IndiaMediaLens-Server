@@ -1,4 +1,5 @@
 import os
+import queue
 import threading
 from typing import Literal
 from dotenv import load_dotenv
@@ -13,16 +14,39 @@ load_dotenv()
 serp_api_key = os.environ.get('SERP_API_KEY')
 serp_client = serpapi.Client(api_key=serp_api_key)
 
-def get_selenium_html(url):
-    with threading.Lock():
-        with webdriver.Chrome(options=options) as driver: 
-            driver.get(url)
-            article_html = driver.page_source
-        return article_html
-
 options = ChromeOptions()
 options.page_load_strategy = 'eager'
 options.add_argument("--headless=new")
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
+
+options.add_argument("--disable-blink-features=AutomationControlled")
+options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--disable-features=IsolateOrigins,site-per-process")
+options.add_argument("--disable-extensions")
+options.add_argument("--blink-settings=imagesEnabled=false")
+
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option('useAutomationExtension', False)
+
+prefs = {
+    "profile.managed_default_content_settings.images": 2,
+    "profile.managed_default_content_settings.stylesheets": 2,
+    "profile.managed_default_content_settings.fonts": 2,
+    "profile.managed_default_content_settings.media_stream": 2
+}
+
+# make a pre warmed pool of 3 drivers (chromium heads)
+driver_pool = queue.Queue()
+for _ in range(3):driver_pool.put(webdriver.Chrome(options=options))
+
+def get_selenium_html(url):
+    driver = driver_pool.get()
+    driver.get(url)
+    article_html = driver.page_source
+    driver_pool.put(driver)
+    return article_html
+
 
 config = Config()
 config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124  Safari/537.36'
@@ -116,7 +140,7 @@ def parse_stories(stories:list[dict[str,str]]):
     
     return stories
 
-def parse_stories_parallel(stories, max_threads=80):
+def parse_stories_parallel(stories, max_threads=16):
     
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
         future_to_story = {
@@ -155,5 +179,9 @@ def request_serp_match(request_stories:dict[str,str], serp_stories:list[dict[str
             final_stories[title] = story[assign_key]
     
     return final_stories
-    
 
+def shutdown_selenium_pool():
+    while not driver_pool.empty():
+        driver = driver_pool.get()
+        driver.quit()
+    print("Headerless browsers quit.")

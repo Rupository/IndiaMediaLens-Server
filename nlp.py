@@ -1,3 +1,10 @@
+import os
+os.environ["OMP_NUM_THREADS"] = "4"
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
+os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "4"
+os.environ["NUMEXPR_NUM_THREADS"] = "4"
+
 import spacy
 from spacy.language import Language
 from spacy.tokens import Span
@@ -6,6 +13,10 @@ from thefuzz import fuzz, process
 from NewsSentiment import TargetSentimentClassifier
 import numpy as np
 from typing import Literal
+from functools import lru_cache
+
+import torch
+torch.set_num_threads(4)
 
 newsmtsc_classifier = TargetSentimentClassifier()
 
@@ -50,7 +61,11 @@ df_corpus = pd.read_json('data/current/nivaduck_with_display_names.json')
 df_corpus = df_corpus.dropna(subset='display_name')
 corpus = df_corpus['display_name'].to_dict()
 
-nlp = spacy.load('en_core_web_trf')
+@lru_cache(maxsize=2048)
+def get_cached_fuzzy_match(entity_text):
+    return process.extractOne(entity_text, corpus, scorer=fuzz.ratio, score_cutoff=95)
+
+nlp = spacy.load('en_core_web_trf', disable=['tagger', 'attribute_ruler', 'lemmatizer'])
 @Language.component("fuzzy_affiliation")
 def fuzzy_affiliates(doc):
     ents = []
@@ -60,7 +75,7 @@ def fuzzy_affiliates(doc):
             ents.append(ent)
             continue
         
-        match = process.extractOne(ent.text, corpus, scorer=fuzz.ratio, score_cutoff=95)
+        match = get_cached_fuzzy_match(ent.text)
 
         if not match:
             ents.append(ent)
