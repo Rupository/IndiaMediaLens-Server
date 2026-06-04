@@ -1,10 +1,9 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-from dotenv import load_dotenv
-load_dotenv()
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
-import modal
 import traceback
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -15,9 +14,8 @@ from historical import get_cumulative_stance_data, assign_stance
 import visualization
 
 from current import get_full_stories, request_serp_match
-from gpu_nlp import NLP_processor
+from nlp import stories_with_nlp
 
-NLP_processor = modal.Cls.from_name("ViewFinderNLP", "NLP_processor")
 api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
 
 class ColourRequest(BaseModel):
@@ -57,7 +55,7 @@ def historical_colour(request_data: ColourRequest):
     try:
         print("Fetching colours...", end='\n\n\n')
         serp_stories = get_full_stories(story_token)
-        labeled_serp_stories = NLP_processor().stories_with_nlp.remote(serp_stories, 'EST')
+        labeled_serp_stories = stories_with_nlp(serp_stories, 'EST')
         current_est_stances = request_serp_match(request_stories, labeled_serp_stories, 'EST_label')
 
         historical_est_stances = assign_stance(request_stories, cumulative_stance_data)
