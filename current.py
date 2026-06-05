@@ -8,6 +8,15 @@ from newspaper.article import ArticleException
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
+from yaspin import yaspin
+import logging
+
+logging.basicConfig(
+    filename='runs.log',
+    filemode='a',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 options = ChromeOptions()
 options.page_load_strategy = 'eager'
@@ -42,7 +51,6 @@ def get_selenium_html(url):
     driver_pool.put(driver)
     return article_html
 
-
 config = Config()
 config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124  Safari/537.36'
 config.request_timeout = 20
@@ -55,7 +63,7 @@ def parse_url(url) -> str | None:
 
         text = " ".join(article.text.split()[:200])
         if text == '':
-            raise LookupError(f"First Attempt: Unable to extact article text for {url}. Retrying...") # if fail, go into second try
+            raise LookupError(f"\n[INFO] First Attempt: Unable to extact article text for [{url}]. Retrying...") # if fail, go into second try
 
         return text
     
@@ -68,14 +76,14 @@ def parse_url(url) -> str | None:
 
                 text = " ".join(article.text.split()[:200])
                 if text == '':
-                    raise LookupError(f"Second Attempt: Unable to extact article text for {url}. Retrying...") # if fail, go into third try
+                    raise LookupError(f"\n[INFO] Second Attempt: Unable to extact article text for [{url}]. Retrying...") # if fail, go into third try
                 else:
-                    print(f'Retry succeeded for {url}!')
-                
+                    logging.info(f'Retry succeeded for [{url}]!')
+                    
                 return text
             
             else:
-                print(e1)
+                logging.error(str(e1))
                 return ''
             
         except (ArticleException, LookupError) as e2:
@@ -86,15 +94,14 @@ def parse_url(url) -> str | None:
                     article.parse()
                     text = " ".join(article.text.split()[:200])
                     if text == '':
-                        text = ''
-                        print(f"Third Attempt: Unable to extact article text for {url}") # if it still fails, can't circumvent.
+                        raise LookupError(f"\n[INFO] Third Attempt: Unable to extact article text for [{url}]. Retryig...") # if fail, final try
                     else:
-                        print(f'Retry succeeded for {url}!')
+                        logging.info(f'Retry succeeded for [{url}]!')
                     
                     return text
 
                 else:
-                    print(e2)
+                    logging.error(str(e2))
                     return ''
 
             except (ArticleException, LookupError) as e3:
@@ -106,56 +113,68 @@ def parse_url(url) -> str | None:
                     text = " ".join(article.text.split()[:200])
                     if text == '':
                         text = ''
-                        print(f"Final Attempt: Unable to extact article text for {url}") # if it still fails, can't circumvent.
+                        logging.error(f"Final Attempt: Unable to extact article text for [{url}]") # if it still fails, can't circumvent.
                     else:
-                        print(f'Retry succeeded for {url}!')
+                        logging.info(f'Retry succeeded for [{url}]!')
                     
                     return text
 
                 else:
-                    print(e3)
+                    logging.error(str(e3))
                     return ''
 
 def decode_url(url:str):
     return gnewsdecoder(url)['decoded_url']
 
 def parse_stories_parallel(stories, max_threads=15):
-    
-    with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        future_to_story = {
-            executor.submit(parse_url, story['url']): story 
-            for story in stories
-        }
-        
-        for future in as_completed(future_to_story):
-            story = future_to_story[future]
-            try:
-                text = future.result()
-                story['text'] = text
-                
-            except Exception as e:
-                print(f"Unexpected failure processing {story['url']}: {e}")
-                story['text'] = ''
+    total = len(stories)
+    completed = 0
 
-    return stories
+    with yaspin(text=f"Parsing 0/{total} Stories...", color="green") as sp:
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            future_to_story = {
+                executor.submit(parse_url, story['url']): story 
+                for story in stories
+            }
+            
+            for future in as_completed(future_to_story):
+                story = future_to_story[future]
+                try:
+                    text = future.result()
+                    story['text'] = text
+                    
+                except Exception as e:
+                    logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
+                    story['text'] = ''
+                
+                completed += 1
+                sp.text = f"Parsing {completed}/{total} Stories..."
+
+        return stories
 
 def decode_urls_parallel(stories:list[dict[str|str]], max_threads=15):
+    total = len(stories)
+    completed = 0
 
-    with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        future_to_story = {
-            executor.submit(decode_url, story['url']): story 
-            for story in stories
-        }
-        
-        for future in as_completed(future_to_story):
-            story = future_to_story[future]
-            try:
-                url = future.result()
-                story['url'] = url
-                
-            except Exception as e:
-                print(f"Unexpected failure processing [{story['title']}]: {e}")
-                story['url'] = ''
+    with yaspin(text=f"Decoding 0/{total} URLs...", color="green") as sp:
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            future_to_story = {
+                executor.submit(decode_url, story['url']): story 
+                for story in stories
+            }
+            
+            for future in as_completed(future_to_story):
+                story = future_to_story[future]
+                try:
+                    url = future.result()
+                    story['url'] = url
+                    
+                except Exception as e:
+                    logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
+                    story['url'] = ''
+            
+                completed += 1
+                sp.text = f"Decoding {completed}/{total} URLs..."
 
     return stories
 
@@ -171,4 +190,4 @@ def shutdown_selenium_pool():
     while not driver_pool.empty():
         driver = driver_pool.get()
         driver.quit()
-    print("Headerless browsers quit.")
+    print("INFO:     Headerless browsers quit.")

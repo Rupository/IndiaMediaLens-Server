@@ -14,9 +14,18 @@ from NewsSentiment import TargetSentimentClassifier
 import numpy as np
 from typing import Literal
 from functools import lru_cache
+from yaspin import yaspin
+import logging
 
 import torch
 torch.set_num_threads(4)
+
+logging.basicConfig(
+    filename='runs.log',
+    filemode='a',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 newsmtsc_classifier = TargetSentimentClassifier()
 
@@ -106,38 +115,36 @@ def batch_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], ba
     #for text in texts: print(text, end='\n\n')
     story_datapoints_tracker = [] # for the story at the i'th index, how many newsmtsc tuples it has
     
-    for doc in nlp.pipe(texts, batch_size=batch_size):
-        data_count = 0
+    with yaspin(text='Performing NER...', color='green'):
+        for doc in nlp.pipe(texts, batch_size=batch_size):
+            data_count = 0
 
-        for ent in doc.ents:
-            if ent.label_ == entity_type:
-                sentence = ent.sent
-                left = doc.text[sentence.start_char : ent.start_char]
-                entity_str = ent.text
-                right= doc.text[ent.end_char : sentence.end_char]
+            for ent in doc.ents:
+                if ent.label_ == entity_type:
+                    sentence = ent.sent
+                    left = doc.text[sentence.start_char : ent.start_char]
+                    entity_str = ent.text
+                    right= doc.text[ent.end_char : sentence.end_char]
 
-                data.append((left, entity_str, right))
-                data_count += 1
-        
-        story_datapoints_tracker.append(data_count)
+                    data.append((left, entity_str, right))
+                    data_count += 1
+            
+            story_datapoints_tracker.append(data_count)
     
     if data:
 
-        sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size)
+        with yaspin(text='Analysing Sentiment...', color='green'):
+            sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
         return data, story_datapoints_tracker, sentiments
     
     else:
 
-        print("Could not find ANY relavant entities!")
+        logging.warning("<NLP> Could not find ANY relavant entities!")
         return [], [], []
 
 
 def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'],
                   data, story_datapoints_tracker, sentiments):
-    
-    print()
-    print(data)
-    print()
 
     label = f'{entity_type}_label'
     if data == []:
@@ -156,8 +163,6 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
             if max(probs.values()) < 0.75: continue
 
             vector = [probs['positive'], probs['neutral'], probs['negative']]
-            print(datapoint)
-            print(vector)
             vectors.append(vector)
         
         if not vectors:
@@ -165,13 +170,8 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
             i += k
             continue
 
-        print()
-
         vectors = np.array(vectors)
         article_vec = np.mean(vectors, axis=0)
-        print('Outlet:', story['outlet'])
-        print('URL:', story['url'])
-        print('Article Vector:', article_vec)
         class_index = np.argmax(article_vec)
 
         if class_index == 0:
@@ -180,11 +180,9 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
             story[label] = 'neutral'
         elif class_index == 2:
             story[label] = 'anti'
-        print('ENT_label:', story[label])
         
         i += k
-        print()
-        print()
+
     
     return stories
 

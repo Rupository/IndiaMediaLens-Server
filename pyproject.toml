@@ -25,6 +25,7 @@ dependencies = [
     "thefuzz>=0.22.1",
     "typing>=3.10.0.0",
     "googlenewsdecoder>=0.1.7",
+    "yaspin>=3.4.0",
 ]
 
 [tool.uv.sources]

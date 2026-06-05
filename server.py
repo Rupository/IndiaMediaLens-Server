@@ -1,4 +1,5 @@
 import os
+import gc
 import asyncio
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -33,6 +34,7 @@ def startup_event():
 @app.on_shutdown
 def shutdown_event():
     shutdown_selenium_pool()
+    gc.collect()
 
 @api.post(
     "/api/v0/colour",
@@ -53,7 +55,6 @@ async def colour(request_data: ColourRequest):
         raise HTTPException(status_code=400, detail="Request stories missing")
 
     try:
-        print("Fetching colours...", end='\n\n\n')
 
         processed_stories = await asyncio.to_thread(get_full_stories, request_stories)
         current_est_stances = await asyncio.to_thread(stories_with_nlp, processed_stories, 'EST')

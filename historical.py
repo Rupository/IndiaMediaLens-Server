@@ -312,16 +312,4 @@ def assign_hist_stance(stories:list[dict[str,str]],
 
         hist_stanced_stories[story['title']] = str(cumulative_stance_data.loc[domain, 'cumulative stance %'])
 
-    '''for key, value in stanced_stories.items():
-
-        if value not in OUTLET_TO_DOMAIN:
-            stanced_stories[key] = 'unknown'
-            continue
-        
-        domain = OUTLET_TO_DOMAIN[value]
-
-        if domain not in cumulative_stance_data.index:
-            stanced_stories[key] = 'unknown'
-            continue'''
-
     return hist_stanced_stories

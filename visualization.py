@@ -267,7 +267,6 @@ def reload_bar(outlet: str, chart_element: ui.echart):
 
     except Exception as e:
         ui.notify(f"Plot Error: {str(e)}", type='negative')
-        print(f"Error: {e}")
 
 
 def create_session(outlet:str):
