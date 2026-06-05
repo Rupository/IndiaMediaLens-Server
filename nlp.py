@@ -190,4 +190,7 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
 
 def stories_with_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], batch_size=16):
     data, tracker, sentiments = batch_nlp(stories, entity_type, batch_size)
-    return label_stories(stories, entity_type, data, tracker, sentiments)
+    final_stories = label_stories(stories, entity_type, data, tracker, sentiments)
+
+    formatted_stories = {story['title']:story[f'{entity_type}_label'] for story in final_stories}
+    return formatted_stories

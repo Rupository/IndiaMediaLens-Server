@@ -294,11 +294,25 @@ def get_similarity_graph_data(start_date: dt, end_date: dt, focus_domain: str) -
         }
     }
 
-def assign_stance(request_stories:dict[str,str],
+def assign_hist_stance(stories:list[dict[str,str]],
                   cumulative_stance_data:pd.DataFrame):
 
-    stanced_stories = request_stories.copy()
-    for key, value in stanced_stories.items():
+    hist_stanced_stories = dict[str,str]()
+
+    for story in stories:
+        if story['outlet'] not in OUTLET_TO_DOMAIN:
+            hist_stanced_stories[story['title']] = 'unknown'
+            continue
+
+        domain = OUTLET_TO_DOMAIN[story['outlet']]
+
+        if domain not in cumulative_stance_data.index:
+            hist_stanced_stories[story['title']] = 'unknown'
+            continue
+
+        hist_stanced_stories[story['title']] = str(cumulative_stance_data.loc[domain, 'cumulative stance %'])
+
+    '''for key, value in stanced_stories.items():
 
         if value not in OUTLET_TO_DOMAIN:
             stanced_stories[key] = 'unknown'
@@ -308,8 +322,6 @@ def assign_stance(request_stories:dict[str,str],
 
         if domain not in cumulative_stance_data.index:
             stanced_stories[key] = 'unknown'
-            continue
-        
-        stanced_stories[key] = str(cumulative_stance_data.loc[domain, 'cumulative stance %'])
+            continue'''
 
-    return stanced_stories
+    return hist_stanced_stories

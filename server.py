@@ -11,17 +11,16 @@ from pydantic import BaseModel
 from nicegui import ui, app
 from datetime import datetime as dt
 
-from historical import get_cumulative_stance_data, assign_stance
+from historical import get_cumulative_stance_data, assign_hist_stance
 import visualization
 
-from current import get_full_stories, request_serp_match, shutdown_selenium_pool
+from current import get_full_stories, shutdown_selenium_pool
 from nlp import stories_with_nlp
 
-api = FastAPI(title="IndiaMediaLens Server API", version="0.1.1")
+api = FastAPI(title="IndiaMediaLens Server API", version="0.1.2")
 
 class ColourRequest(BaseModel):
-    story_token: str
-    stories: dict[str,str]
+    stories: list[dict[str,str]]
 
 class ErrorResponse(BaseModel):
     error: str
@@ -44,36 +43,32 @@ def shutdown_event():
     }
 )
 
-async def historical_colour(request_data: ColourRequest):
+async def colour(request_data: ColourRequest):
     """
-    Return coloured sqaures 
+    Return colour data 
     """
-    story_token = request_data.story_token
     request_stories = request_data.stories
-
-    if not story_token:
-        raise HTTPException(status_code=400, detail="Story token missing")
     
     if not request_stories:
         raise HTTPException(status_code=400, detail="Request stories missing")
 
     try:
         print("Fetching colours...", end='\n\n\n')
-        serp_stories = await asyncio.to_thread(get_full_stories, story_token)
-        labeled_serp_stories = await asyncio.to_thread(stories_with_nlp, serp_stories, 'EST')
-        current_est_stances = request_serp_match(request_stories, labeled_serp_stories, 'EST_label')
 
-        historical_est_stances = assign_stance(request_stories, cumulative_stance_data)
-
+        processed_stories = await asyncio.to_thread(get_full_stories, request_stories)
+        current_est_stances = await asyncio.to_thread(stories_with_nlp, processed_stories, 'EST')
+        historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data)
         combined_stanced_data = {}
 
-        for title in request_stories.keys():
-            hist__est_stance = historical_est_stances.get(title, 'unknown')
-            curr__est_stance = current_est_stances.get(title, 'unknown')
+        for story in request_stories:
+
+            title = story['title']
+            hist_est_stance = historical_est_stances.get(title, 'unknown')
+            curr_est_stance = current_est_stances.get(title, 'unknown')
 
             combined_stanced_data[title] = {
-                "historical": hist__est_stance,
-                "current": curr__est_stance
+                "historical": hist_est_stance,
+                "current": curr_est_stance
             }
         
         return combined_stanced_data
@@ -109,4 +104,4 @@ if __name__ == "__main__":
     if sys.platform == 'win32':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    uvicorn.run(api, host='127.0.0.1', port=5000)
+    uvicorn.run(api, host='localhost', port=5000)
