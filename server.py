@@ -89,9 +89,6 @@ async def colour(request_data: ColourRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Internal server error")
-    
-    finally:
-        gc.collect()
 
 @ui.page("/historical/visualization/{outlet}")
 async def data_visualization(outlet:str):

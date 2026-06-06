@@ -49,11 +49,16 @@ for _ in range(10):DRIVER_POOL.put(webdriver.Chrome(options=options))
 
 def get_selenium_html(url):
     driver = DRIVER_POOL.get()
-    driver.get(url)
-    article_html = driver.page_source
-    DRIVER_POOL.put(driver)
-    return article_html
-    
+    try:
+        driver.get(url)
+        article_html = driver.page_source
+        return article_html
+    except:
+        driver.delete_all_cookies()
+        driver.get("about:blank")
+        raise
+    finally:
+        DRIVER_POOL.put(driver)
 
 config = Config()
 config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124  Safari/537.36'
@@ -66,6 +71,8 @@ def parse_url(url) -> str | None:
         article.parse()
 
         text = " ".join(article.text.split()[:200])
+        del article
+
         if text == '':
             raise LookupError(f"\n[INFO] First Attempt: Unable to extact article text for [{url}]. Retrying...") # if fail, go into second try
 
@@ -79,6 +86,8 @@ def parse_url(url) -> str | None:
                 article.parse()
 
                 text = " ".join(article.text.split()[:200])
+                del article
+
                 if text == '':
                     raise LookupError(f"\n[INFO] Second Attempt: Unable to extact article text for [{url}]. Retrying...") # if fail, go into third try
                 else:
@@ -97,6 +106,8 @@ def parse_url(url) -> str | None:
                     article.download()
                     article.parse()
                     text = " ".join(article.text.split()[:200])
+                    del article
+
                     if text == '':
                         raise LookupError(f"\n[INFO] Third Attempt: Unable to extact article text for [{url}]. Retryig...") # if fail, final try
                     else:
@@ -115,6 +126,8 @@ def parse_url(url) -> str | None:
                     article.download(input_html = get_selenium_html(url))
                     article.parse()
                     text = " ".join(article.text.split()[:200])
+                    del article
+
                     if text == '':
                         text = ''
                         logging.error(f"Final Attempt: Unable to extact article text for [{url}]") # if it still fails, can't circumvent.
@@ -187,9 +200,9 @@ def get_full_stories(request_stories:list[dict[str,str]]):
     stories = [story for story in stories if story['url'] != '']
     parsed_stories = parse_stories_parallel(stories)
     processed_stories = [story for story in stories if story['text'] != '']
-    shutdown_selenium_pool()
+    #shutdown_selenium_pool()
     gc.collect()
-    restart_selinium_pool()
+    #restart_selinium_pool()
 
     return processed_stories
 
@@ -198,7 +211,3 @@ def shutdown_selenium_pool():
         driver = DRIVER_POOL.get()
         driver.quit()
     print("INFO:     Headerless browsers quit.")
-
-def restart_selinium_pool():
-    for _ in range(10):DRIVER_POOL.put(webdriver.Chrome(options=options))
-    print("INFO:     Headerless browsers restarted.")

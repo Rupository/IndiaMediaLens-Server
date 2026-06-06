@@ -116,21 +116,23 @@ def batch_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], ba
     #for text in texts: print(text, end='\n\n')
     story_datapoints_tracker = [] # for the story at the i'th index, how many newsmtsc tuples it has
     
-    with yaspin(text='Performing NER...', color='green'):
-        for doc in nlp.pipe(texts, batch_size=batch_size):
-            data_count = 0
+    with yaspin(text='Resolving Entities...', color='green'):
+        with torch.no_grad():
+            for doc in nlp.pipe(texts, batch_size=batch_size):
+                data_count = 0
 
-            for ent in doc.ents:
-                if ent.label_ == entity_type:
-                    sentence = ent.sent
-                    left = doc.text[sentence.start_char : ent.start_char]
-                    entity_str = ent.text
-                    right= doc.text[ent.end_char : sentence.end_char]
+                for ent in doc.ents:
+                    if ent.label_ == entity_type:
+                        sentence = ent.sent
+                        left = doc.text[sentence.start_char : ent.start_char]
+                        entity_str = ent.text
+                        right= doc.text[ent.end_char : sentence.end_char]
 
-                    data.append((left, entity_str, right))
-                    data_count += 1
-            
-            story_datapoints_tracker.append(data_count)
+                        data.append((left, entity_str, right))
+                        data_count += 1
+                
+                story_datapoints_tracker.append(data_count)
+                del doc
     
     if data:
 
@@ -191,7 +193,8 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
 def stories_with_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], batch_size=16):
     data, tracker, sentiments = batch_nlp(stories, entity_type, batch_size)
     final_stories = label_stories(stories, entity_type, data, tracker, sentiments)
-
     formatted_stories = {story['title']:story[f'{entity_type}_label'] for story in final_stories}
+
+    del data, tracker, sentiments, final_stories
     gc.collect()
     return formatted_stories
