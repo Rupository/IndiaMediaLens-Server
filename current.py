@@ -1,4 +1,5 @@
 import os
+import gc
 import queue
 import threading
 from typing import Literal
@@ -39,6 +40,8 @@ prefs = {
     "profile.managed_default_content_settings.fonts": 2,
     "profile.managed_default_content_settings.media_stream": 2
 }
+
+THREAD_EXEC = ThreadPoolExecutor(max_workers=15)
 
 # make a pre warmed pool of 3 drivers (chromium heads)
 driver_pool = queue.Queue()
@@ -131,24 +134,24 @@ def parse_stories_parallel(stories, max_threads=15):
     completed = 0
 
     with yaspin(text=f"Parsing 0/{total} Stories...", color="green") as sp:
-        with ThreadPoolExecutor(max_workers=max_threads) as executor:
-            future_to_story = {
-                executor.submit(parse_url, story['url']): story 
-                for story in stories
-            }
-            
-            for future in as_completed(future_to_story):
-                story = future_to_story[future]
-                try:
-                    text = future.result()
-                    story['text'] = text
-                    
-                except Exception as e:
-                    logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
-                    story['text'] = ''
+        #with THREAD_EXEC as executor:
+        future_to_story = {
+            THREAD_EXEC.submit(parse_url, story['url']): story 
+            for story in stories
+        }
+        
+        for future in as_completed(future_to_story):
+            story = future_to_story[future]
+            try:
+                text = future.result()
+                story['text'] = text
                 
-                completed += 1
-                sp.text = f"Parsing {completed}/{total} Stories..."
+            except Exception as e:
+                logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
+                story['text'] = ''
+            
+            completed += 1
+            sp.text = f"Parsing {completed}/{total} Stories..."
 
         return stories
 
@@ -157,31 +160,33 @@ def decode_urls_parallel(stories:list[dict[str|str]], max_threads=15):
     completed = 0
 
     with yaspin(text=f"Decoding 0/{total} URLs...", color="green") as sp:
-        with ThreadPoolExecutor(max_workers=max_threads) as executor:
-            future_to_story = {
-                executor.submit(decode_url, story['url']): story 
-                for story in stories
-            }
-            
-            for future in as_completed(future_to_story):
-                story = future_to_story[future]
-                try:
-                    url = future.result()
-                    story['url'] = url
-                    
-                except Exception as e:
-                    logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
-                    story['url'] = ''
-            
-                completed += 1
-                sp.text = f"Decoding {completed}/{total} URLs..."
+        #with THREAD_EXEC as executor:
+        future_to_story = {
+            THREAD_EXEC.submit(decode_url, story['url']): story 
+            for story in stories
+        }
+        
+        for future in as_completed(future_to_story):
+            story = future_to_story[future]
+            try:
+                url = future.result()
+                story['url'] = url
+                
+            except Exception as e:
+                logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
+                story['url'] = ''
+        
+            completed += 1
+            sp.text = f"Decoding {completed}/{total} URLs..."
 
-    return stories
+        return stories
 
 def get_full_stories(request_stories:list[dict[str,str]]):
     stories = decode_urls_parallel(request_stories)
+    gc.collect()
     stories = [story for story in stories if story['url'] != '']
     parsed_stories = parse_stories_parallel(stories)
+    gc.collect()
     processed_stories = [story for story in stories if story['text'] != '']
 
     return processed_stories

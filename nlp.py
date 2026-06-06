@@ -1,4 +1,5 @@
 import os
+import gc
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["OPENBLAS_NUM_THREADS"] = "4"
 os.environ["MKL_NUM_THREADS"] = "4"
@@ -134,7 +135,8 @@ def batch_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], ba
     if data:
 
         with yaspin(text='Analysing Sentiment...', color='green'):
-            sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
+            with torch.no_grad():
+                sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
         return data, story_datapoints_tracker, sentiments
     
     else:
@@ -191,4 +193,5 @@ def stories_with_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OP
     final_stories = label_stories(stories, entity_type, data, tracker, sentiments)
 
     formatted_stories = {story['title']:story[f'{entity_type}_label'] for story in final_stories}
+    gc.collect()
     return formatted_stories
