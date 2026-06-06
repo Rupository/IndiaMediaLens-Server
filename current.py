@@ -41,18 +41,19 @@ prefs = {
     "profile.managed_default_content_settings.media_stream": 2
 }
 
-THREAD_EXEC = ThreadPoolExecutor(max_workers=15)
+THREAD_EXEC = ThreadPoolExecutor(max_workers=20)
 
-# make a pre warmed pool of 3 drivers (chromium heads)
-driver_pool = queue.Queue()
-for _ in range(3):driver_pool.put(webdriver.Chrome(options=options))
+# make a pre warmed pool of 10 drivers (chromium heads)
+DRIVER_POOL = queue.Queue()
+for _ in range(10):DRIVER_POOL.put(webdriver.Chrome(options=options))
 
 def get_selenium_html(url):
-    driver = driver_pool.get()
+    driver = DRIVER_POOL.get()
     driver.get(url)
     article_html = driver.page_source
-    driver_pool.put(driver)
+    DRIVER_POOL.put(driver)
     return article_html
+    
 
 config = Config()
 config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124  Safari/537.36'
@@ -183,16 +184,21 @@ def decode_urls_parallel(stories:list[dict[str|str]], max_threads=15):
 
 def get_full_stories(request_stories:list[dict[str,str]]):
     stories = decode_urls_parallel(request_stories)
-    gc.collect()
     stories = [story for story in stories if story['url'] != '']
     parsed_stories = parse_stories_parallel(stories)
-    gc.collect()
     processed_stories = [story for story in stories if story['text'] != '']
+    shutdown_selenium_pool()
+    gc.collect()
+    restart_selinium_pool()
 
     return processed_stories
 
 def shutdown_selenium_pool():
-    while not driver_pool.empty():
-        driver = driver_pool.get()
+    while not DRIVER_POOL.empty():
+        driver = DRIVER_POOL.get()
         driver.quit()
     print("INFO:     Headerless browsers quit.")
+
+def restart_selinium_pool():
+    for _ in range(10):DRIVER_POOL.put(webdriver.Chrome(options=options))
+    print("INFO:     Headerless browsers restarted.")
