@@ -15,7 +15,6 @@ from NewsSentiment import TargetSentimentClassifier
 import numpy as np
 from typing import Literal
 from functools import lru_cache
-from yaspin import yaspin
 import logging
 
 import torch

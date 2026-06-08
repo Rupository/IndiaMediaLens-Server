@@ -144,65 +144,47 @@ def decode_url(url:str):
     return gnewsdecoder(url)['decoded_url']
 
 def parse_stories_parallel(stories, max_threads=15):
-    total = len(stories)
-    completed = 0
-
-    with yaspin(text=f"Parsing 0/{total} Stories...", color="green") as sp:
-        #with THREAD_EXEC as executor:
-        future_to_story = {
-            THREAD_EXEC.submit(parse_url, story['url']): story 
-            for story in stories
-        }
-        
-        for future in as_completed(future_to_story):
-            story = future_to_story[future]
-            try:
-                text = future.result()
-                story['text'] = text
-                
-            except Exception as e:
-                logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
-                story['text'] = ''
+    future_to_story = {
+        THREAD_EXEC.submit(parse_url, story['url']): story 
+        for story in stories
+    }
+    
+    for future in as_completed(future_to_story):
+        story = future_to_story[future]
+        try:
+            text = future.result()
+            story['text'] = text
             
-            completed += 1
-            sp.text = f"Parsing {completed}/{total} Stories..."
+        except Exception as e:
+            logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
+            story['text'] = ''
 
-        return stories
+    return stories
 
 def decode_urls_parallel(stories:list[dict[str|str]], max_threads=15):
-    total = len(stories)
-    completed = 0
+    future_to_story = {
+        THREAD_EXEC.submit(decode_url, story['url']): story 
+        for story in stories
+    }
+    
+    for future in as_completed(future_to_story):
+        story = future_to_story[future]
+        try:
+            url = future.result()
+            story['url'] = url
+            
+        except Exception as e:
+            logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
+            story['url'] = ''
 
-    with yaspin(text=f"Decoding 0/{total} URLs...", color="green") as sp:
-        #with THREAD_EXEC as executor:
-        future_to_story = {
-            THREAD_EXEC.submit(decode_url, story['url']): story 
-            for story in stories
-        }
-        
-        for future in as_completed(future_to_story):
-            story = future_to_story[future]
-            try:
-                url = future.result()
-                story['url'] = url
-                
-            except Exception as e:
-                logging.error(f"Unexpected failure processing [{story['url']}]: {e}")
-                story['url'] = ''
-        
-            completed += 1
-            sp.text = f"Decoding {completed}/{total} URLs..."
-
-        return stories
+    return stories
 
 def get_full_stories(request_stories:list[dict[str,str]]):
     stories = decode_urls_parallel(request_stories)
     stories = [story for story in stories if story['url'] != '']
     parsed_stories = parse_stories_parallel(stories)
     processed_stories = [story for story in stories if story['text'] != '']
-    #shutdown_selenium_pool()
     gc.collect()
-    #restart_selinium_pool()
 
     return processed_stories
 
