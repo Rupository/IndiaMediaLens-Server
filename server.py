@@ -46,14 +46,15 @@ async def app_update_generator(request_stories:list[dict[str,str]]):
     try:
         task = spinner.add_task("Intializing...", total=3)
 
-        yield f"data: {json.dumps({'status':'running', 'message':'Request Accepted > Extracting Stories...'})}"
+        yield f"data: {json.dumps({'status':'running', 'msg':'Request Accepted > Extracting Stories'})}\n\n"
         spinner.update(task, advance=1, description='Request Accepted > Extracting Stories...')
-        
         processed_stories = await asyncio.to_thread(get_full_stories, request_stories, )
-        yield f"data: {json.dumps({'status':'running', 'message':f'Extracted {len(processed_stories)} Stories > Analysing Sentiments...'})}"
-        spinner.update(task, advance=1, description=f'Extracted {len(processed_stories)} Stories > Analysing Sentiments...')
 
+        yield f"data: {json.dumps({'status':'running', 'msg':f'Extracted {len(processed_stories)} Stories > Analysing Sentiments'})}\n\n"
+        spinner.update(task, advance=1, description=f'Extracted {len(processed_stories)} Stories > Analysing Sentiments...')
         current_est_stances = await asyncio.to_thread(stories_with_nlp, processed_stories, 'EST')
+
+        spinner.update(task, advance=1, description=f'Finished Analysis > Tidying Up')
         historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data)
         combined_stanced_data = {}
 
@@ -68,27 +69,28 @@ async def app_update_generator(request_stories:list[dict[str,str]]):
                 "current": curr_est_stance
             }
         
-        yield f"data: {json.dumps({'status':'finished', 'data': combined_stanced_data})}"
+        spinner.remove_task(task)
+        yield f"data: {json.dumps({'status':'finished', 'data': combined_stanced_data})}\n\n"
     
     except ValueError as e:
-        yield f"data: {json.dumps({'status':'error', 'message': f'Invalid data: {str(e)}'})}"
+        yield f"data: {json.dumps({'status':'error', 'msg': f'Invalid data: {str(e)}'})}\n\n"
         raise HTTPException(status_code=400, detail=f"Invalid data: {str(e)}")
     
     except KeyError as e:
-        yield f"data: {json.dumps({'status':'error', 'message': f'Missing data: {str(e)}'})}"
+        yield f"data: {json.dumps({'status':'error', 'msg': f'Missing data: {str(e)}'})}\n\n"
         raise HTTPException(status_code=401, detail=f"Missing data: {str(e)}")
     
     except ConnectionError as e:
-        yield f"data: {json.dumps({'status':'error', 'message': 'Service temporarily unavailable'})}"
+        yield f"data: {json.dumps({'status':'error', 'msg': 'Service temporarily unavailable'})}\n\n"
         raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     
     except TimeoutError as e:
-        yield f"data: {json.dumps({'status':'error', 'message': 'Request timeout'})}"
+        yield f"data: {json.dumps({'status':'error', 'msg': 'Request timeout'})}\n\n"
         raise HTTPException(status_code=504, detail="Request timeout")
     
     except Exception as e:
         traceback.print_exc()
-        yield f"data: {json.dumps({'status':'error', 'message': 'Internal server error'})}"
+        yield f"data: {json.dumps({'status':'error', 'msg': 'Internal server error'})}\n\n"
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
