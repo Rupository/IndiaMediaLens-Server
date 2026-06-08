@@ -42,15 +42,6 @@ def shutdown_event():
     shutdown_selenium_pool()
     gc.collect()
 
-@api.post(
-    "/api/v0/colour",
-    response_model=dict,
-    responses={
-        400: {"model": ErrorResponse},
-        500: {"model": ErrorResponse}
-    }
-)
-
 async def app_update_generator(request_stories:list[dict[str,str]]):
     try:
         task = spinner.add_task("Intializing...", total=3)
@@ -100,6 +91,14 @@ async def app_update_generator(request_stories:list[dict[str,str]]):
         yield f"data: {json.dumps({'status':'error', 'message': 'Internal server error'})}"
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
+@api.post(
+    "/api/v0/colour",
+    responses={
+        400: {"model": ErrorResponse},
+        500: {"model": ErrorResponse}
+    }
+)
 async def colour(request_data: ColourRequest):
     """
     Return colour data (streamed)
@@ -109,7 +108,7 @@ async def colour(request_data: ColourRequest):
     if not request_stories:
         raise HTTPException(status_code=400, detail="Request stories missing")
 
-    return StreamingResponse(app_update_generator(), media_type='text/event-stream')
+    return StreamingResponse(app_update_generator(request_stories), media_type='text/event-stream')
 
 @ui.page("/historical/visualization/{outlet}")
 async def data_visualization(outlet:str):

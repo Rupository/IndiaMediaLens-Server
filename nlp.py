@@ -115,29 +115,27 @@ def batch_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], ba
     #for text in texts: print(text, end='\n\n')
     story_datapoints_tracker = [] # for the story at the i'th index, how many newsmtsc tuples it has
     
-    with yaspin(text='Resolving Entities...', color='green'):
-        with torch.no_grad():
-            for doc in nlp.pipe(texts, batch_size=batch_size):
-                data_count = 0
+    with torch.no_grad():
+        for doc in nlp.pipe(texts, batch_size=batch_size):
+            data_count = 0
 
-                for ent in doc.ents:
-                    if ent.label_ == entity_type:
-                        sentence = ent.sent
-                        left = doc.text[sentence.start_char : ent.start_char]
-                        entity_str = ent.text
-                        right= doc.text[ent.end_char : sentence.end_char]
+            for ent in doc.ents:
+                if ent.label_ == entity_type:
+                    sentence = ent.sent
+                    left = doc.text[sentence.start_char : ent.start_char]
+                    entity_str = ent.text
+                    right= doc.text[ent.end_char : sentence.end_char]
 
-                        data.append((left, entity_str, right))
-                        data_count += 1
-                
-                story_datapoints_tracker.append(data_count)
-                del doc
+                    data.append((left, entity_str, right))
+                    data_count += 1
+            
+            story_datapoints_tracker.append(data_count)
+            del doc
     
     if data:
 
-        with yaspin(text='Analysing Sentiment...', color='green'):
-            with torch.no_grad():
-                sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
+        with torch.no_grad():
+            sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
         return data, story_datapoints_tracker, sentiments
     
     else:
