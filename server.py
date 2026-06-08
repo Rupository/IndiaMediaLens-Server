@@ -51,7 +51,7 @@ def shutdown_event():
     }
 )
 
-async def app_update_generator():
+async def app_update_generator(request_stories:list[dict[str,str]]):
     try:
         task = spinner.add_task("Intializing...", total=3)
 
