@@ -9,7 +9,6 @@ from newspaper.article import ArticleException
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
-from yaspin import yaspin
 import logging
 
 logging.basicConfig(
