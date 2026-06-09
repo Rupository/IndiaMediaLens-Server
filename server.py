@@ -8,8 +8,10 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 import json
 import traceback
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
 from nicegui import ui, app
 from datetime import datetime as dt
@@ -39,6 +41,13 @@ class ColourRequest(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
 
+def get_ip(request:Request):
+    return request.headers.get("CF-Connecting-IP")
+
+limiter = Limiter(key_func=get_ip)
+api.state.limiter = limiter
+#api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 @app.on_startup
 def startup_event():
     global cumulative_stance_data
@@ -50,8 +59,8 @@ def shutdown_event():
     shutdown_selenium_pool()
     gc.collect()
 
-async def app_update_generator(request_stories:list[dict[str,str]]):
-
+@limiter.limit('1/minute')
+async def app_update_generator(request:Request, request_stories:list[dict[str,str]]):
     task = spinner.add_task("Intializing", total=3)
 
     try:
@@ -88,11 +97,19 @@ async def app_update_generator(request_stories:list[dict[str,str]]):
         traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': f'Invalid data - {str(e)}', 'error_type':'ValueError'})}\n\n"
         logging.error(f"Invalid data: {str(e)}")
+        print("FAIL:     Invalid data")
+    
+    except RateLimitExceeded as e:
+        traceback.print_exc()
+        yield f"data: {json.dumps({'status':'error', 'msg': f'Rate limit exceeded - {str(e)}', 'error_type':'ValueError'})}\n\n"
+        logging.error(f"Rate limit exceeded: {str(e)}")
+        print("FAIL:     Rate limit exceeded")
     
     except Exception as e:
         traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': f'Internal server error - {str(e)}', 'error_type':'ServerError'})}\n\n"
-        logging.error("Internal server error")
+        logging.error(f"Internal server error: {str(e)}")
+        print("FAIL:     Internal server error")
     
     finally:
         spinner.remove_task(task)
@@ -105,12 +122,12 @@ async def app_update_generator(request_stories:list[dict[str,str]]):
         500: {"model": ErrorResponse}
     }
 )
-async def colour(request_data: ColourRequest):
+async def colour(request:Request, request_data: ColourRequest):
     """
     Return colour data (streamed)
     """
     request_stories = request_data.stories
-    return StreamingResponse(app_update_generator(request_stories), media_type='text/event-stream')
+    return StreamingResponse(app_update_generator(request, request_stories), media_type='text/event-stream')
 
 @ui.page("/historical/visualization/{outlet}")
 async def data_visualization(outlet:str):

@@ -26,6 +26,7 @@ dependencies = [
     "typing>=3.10.0.0",
     "googlenewsdecoder>=0.1.7",
     "rich>=15.0.0",
+    "slowapi>=0.1.9",
 ]
 
 [tool.uv.sources]
