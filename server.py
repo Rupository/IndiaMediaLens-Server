@@ -10,7 +10,7 @@ import json
 import traceback
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from nicegui import ui, app
 from datetime import datetime as dt
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -34,7 +34,7 @@ from nlp import stories_with_nlp
 api = FastAPI(title="IndiaMediaLens Server API", version="0.1.2")
 
 class ColourRequest(BaseModel):
-    stories: list[dict[str,str]]
+    stories: list[dict[str,str]] = Field(..., max_length=80)
 
 class ErrorResponse(BaseModel):
     error: str
@@ -51,8 +51,12 @@ def shutdown_event():
     gc.collect()
 
 async def app_update_generator(request_stories:list[dict[str,str]]):
+
+    task = spinner.add_task("Intializing", total=3)
+
     try:
-        task = spinner.add_task("Intializing", total=3)
+        if not request_stories:
+            raise ValueError("Request stories missing")
 
         yield f"data: {json.dumps({'status':'running', 'msg':'Decoding and Extracting Stories'})}\n\n"
         spinner.update(task, advance=1, description='Decoding and Extracting Stories')
@@ -81,30 +85,14 @@ async def app_update_generator(request_stories:list[dict[str,str]]):
         yield f"data: {json.dumps({'status':'finished', 'data': combined_stanced_data})}\n\n"
     
     except ValueError as e:
-        spinner.remove_task(task)
         traceback.print_exc()
-        yield f"data: {json.dumps({'status':'error', 'msg': f'Invalid data: {str(e)}'})}\n\n"
-        logger.error(f"Invalid data: {str(e)}")
-    
-    except KeyError as e:
-        traceback.print_exc()
-        yield f"data: {json.dumps({'status':'error', 'msg': f'Missing data: {str(e)}'})}\n\n"
-        logger.error(f"Missing data: {str(e)}")
-    
-    except ConnectionError as e:
-        traceback.print_exc()
-        yield f"data: {json.dumps({'status':'error', 'msg': 'Service temporarily unavailable'})}\n\n"
-        logger.error("Service temporarily unavailable")
-    
-    except TimeoutError as e:
-        traceback.print_exc()
-        yield f"data: {json.dumps({'status':'error', 'msg': 'Request timeout'})}\n\n"
-        logger.error("Request timeout")
+        yield f"data: {json.dumps({'status':'error', 'msg': f'Invalid data - {str(e)}', 'error_type':'ValueError'})}\n\n"
+        logging.error(f"Invalid data: {str(e)}")
     
     except Exception as e:
         traceback.print_exc()
-        yield f"data: {json.dumps({'status':'error', 'msg': 'Internal server error'})}\n\n"
-        logger.error("Internal server error")
+        yield f"data: {json.dumps({'status':'error', 'msg': f'Internal server error - {str(e)}', 'error_type':'ServerError'})}\n\n"
+        logging.error("Internal server error")
     
     finally:
         spinner.remove_task(task)
@@ -122,10 +110,6 @@ async def colour(request_data: ColourRequest):
     Return colour data (streamed)
     """
     request_stories = request_data.stories
-    
-    if not request_stories:
-        raise HTTPException(status_code=400, detail="Request stories missing")
-
     return StreamingResponse(app_update_generator(request_stories), media_type='text/event-stream')
 
 @ui.page("/historical/visualization/{outlet}")
