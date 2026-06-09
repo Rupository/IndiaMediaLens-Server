@@ -14,6 +14,14 @@ from pydantic import BaseModel
 from nicegui import ui, app
 from datetime import datetime as dt
 from rich.progress import Progress, SpinnerColumn, TextColumn
+import logging
+
+logging.basicConfig(
+    filename='runs.log',
+    filemode='a',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 spinner = Progress(SpinnerColumn(speed=1.5), TextColumn("[bold green]{task.description}"), transient=True)
 
@@ -70,29 +78,36 @@ async def app_update_generator(request_stories:list[dict[str,str]]):
                 "current": curr_est_stance
             }
         
-        spinner.remove_task(task)
         yield f"data: {json.dumps({'status':'finished', 'data': combined_stanced_data})}\n\n"
     
     except ValueError as e:
+        spinner.remove_task(task)
+        traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': f'Invalid data: {str(e)}'})}\n\n"
-        raise HTTPException(status_code=400, detail=f"Invalid data: {str(e)}")
+        logger.error(f"Invalid data: {str(e)}")
     
     except KeyError as e:
+        traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': f'Missing data: {str(e)}'})}\n\n"
-        raise HTTPException(status_code=401, detail=f"Missing data: {str(e)}")
+        logger.error(f"Missing data: {str(e)}")
     
     except ConnectionError as e:
+        traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': 'Service temporarily unavailable'})}\n\n"
-        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+        logger.error("Service temporarily unavailable")
     
     except TimeoutError as e:
+        traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': 'Request timeout'})}\n\n"
-        raise HTTPException(status_code=504, detail="Request timeout")
+        logger.error("Request timeout")
     
     except Exception as e:
         traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': 'Internal server error'})}\n\n"
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error("Internal server error")
+    
+    finally:
+        spinner.remove_task(task)
 
 
 @api.post(
