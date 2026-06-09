@@ -15,7 +15,7 @@ from nicegui import ui, app
 from datetime import datetime as dt
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-spinner = Progress(SpinnerColumn(), TextColumn("[bold green]{task.description}"), transient=True)
+spinner = Progress(SpinnerColumn(speed=1.5), TextColumn("[bold green]{task.description}"), transient=True)
 
 from historical import get_cumulative_stance_data, assign_hist_stance
 import visualization
@@ -44,17 +44,18 @@ def shutdown_event():
 
 async def app_update_generator(request_stories:list[dict[str,str]]):
     try:
-        task = spinner.add_task("Intializing...", total=3)
+        task = spinner.add_task("Intializing", total=3)
 
-        yield f"data: {json.dumps({'status':'running', 'msg':'Request Accepted > Extracting Stories'})}\n\n"
-        spinner.update(task, advance=1, description='Request Accepted > Extracting Stories...')
+        yield f"data: {json.dumps({'status':'running', 'msg':'Decoding and Extracting Stories'})}\n\n"
+        spinner.update(task, advance=1, description='Decoding and Extracting Stories')
         processed_stories = await asyncio.to_thread(get_full_stories, request_stories, )
 
-        yield f"data: {json.dumps({'status':'running', 'msg':f'Extracted {len(processed_stories)} Stories > Analysing Sentiments'})}\n\n"
-        spinner.update(task, advance=1, description=f'Extracted {len(processed_stories)} Stories > Analysing Sentiments...')
+        yield f"data: {json.dumps({'status':'running', 'msg':f'Analysing Sentiments in {len(processed_stories)} Articles'})}\n\n"
+        spinner.update(task, advance=1, description=f'Analysing Sentiments in {len(processed_stories)} Articles')
         current_est_stances = await asyncio.to_thread(stories_with_nlp, processed_stories, 'EST')
 
-        spinner.update(task, advance=1, description=f'Finished Analysis > Tidying Up')
+        yield f"data: {json.dumps({'status':'running', 'msg':f'Tidying Up'})}\n\n"
+        spinner.update(task, advance=1, description=f'Tidying Up')
         historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data)
         combined_stanced_data = {}
 
