@@ -46,7 +46,7 @@ def get_ip(request:Request):
 
 limiter = Limiter(key_func=get_ip)
 api.state.limiter = limiter
-#api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.on_startup
 def startup_event():
@@ -56,16 +56,22 @@ def startup_event():
 
 @app.on_shutdown
 def shutdown_event():
+    logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
     shutdown_selenium_pool()
     gc.collect()
 
 @limiter.limit('1/minute')
+def _rate_limit_check(request:Request):
+    pass
+
 async def app_update_generator(request:Request, request_stories:list[dict[str,str]]):
     task = spinner.add_task("Intializing", total=3)
-
     try:
+
+        _rate_limit_check(request)
         if not request_stories:
             raise ValueError("Request stories missing")
+
 
         yield f"data: {json.dumps({'status':'running', 'msg':'Decoding and Extracting Stories'})}\n\n"
         spinner.update(task, advance=1, description='Decoding and Extracting Stories')
@@ -94,14 +100,12 @@ async def app_update_generator(request:Request, request_stories:list[dict[str,st
         yield f"data: {json.dumps({'status':'finished', 'data': combined_stanced_data})}\n\n"
     
     except ValueError as e:
-        traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': f'Invalid data - {str(e)}', 'error_type':'ValueError'})}\n\n"
         logging.error(f"Invalid data: {str(e)}")
         print("FAIL:     Invalid data")
     
     except RateLimitExceeded as e:
-        traceback.print_exc()
-        yield f"data: {json.dumps({'status':'error', 'msg': f'Rate limit exceeded - {str(e)}', 'error_type':'ValueError'})}\n\n"
+        yield f"data: {json.dumps({'status':'error', 'msg': f'Rate limit exceeded - 1 req/min (429)', 'error_type':'RateLimitError'})}\n\n"
         logging.error(f"Rate limit exceeded: {str(e)}")
         print("FAIL:     Rate limit exceeded")
     
