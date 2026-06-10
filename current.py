@@ -52,8 +52,6 @@ def get_selenium_html(url):
         article_html = driver.page_source
         return article_html
     except:
-        driver.delete_all_cookies()
-        driver.get("about:blank")
         raise
     finally:
         driver.delete_all_cookies() # denavigate from opened news links, may guzzle RAM
