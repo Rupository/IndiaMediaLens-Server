@@ -56,6 +56,8 @@ def get_selenium_html(url):
         driver.get("about:blank")
         raise
     finally:
+        driver.delete_all_cookies() # denavigate from opened news links, may guzzle RAM
+        driver.get("about:blank")
         DRIVER_POOL.put(driver)
 
 config = Config()
