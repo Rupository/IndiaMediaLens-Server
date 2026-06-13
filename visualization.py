@@ -10,20 +10,12 @@ YEARS = [str(y) for y in range(2019, 2025)]
 SCALES = ['Month', '1/2 Year', '1/4 Year', 'Year']
 COLOR_MAP = {"pro":"#33cc33", "anti":"#ff5050", "neutral":"#ffcc00",}
 
-selections = {
-    'start_month': MONTHS[0],
-    'start_year': YEARS[0],
-    'end_month': MONTHS[-1],
-    'end_year': YEARS[-1],
-    'scale': SCALES[-1]
-}
-
 async def handle_reload(outlet: str, 
                         stance_chart: ui.echart, 
                         graph_chart: ui.echart,
                         graph_spinner: ui.spinner,
                         stance_spinner: ui.spinner,
-                        ):
+                        selections:dict):
     
     graph_chart.set_visibility(False)
     graph_spinner.set_visibility(True)
@@ -32,8 +24,8 @@ async def handle_reload(outlet: str,
     
     await asyncio.sleep(0.1)
 
-    reload_bar(outlet, stance_chart)
-    reload_graph(outlet, graph_chart)
+    reload_bar(outlet, stance_chart, selections)
+    reload_graph(outlet, graph_chart, selections)
 
     graph_chart.set_visibility(True)
     graph_spinner.set_visibility(False)
@@ -194,7 +186,7 @@ def get_plot_options(df: pd.DataFrame):
         ]
     }
 
-def reload_graph(outlet: str, chart_element: ui.echart):
+def reload_graph(outlet: str, chart_element: ui.echart, selections:dict):
     try:
         start_str = f"{selections['start_month']} {selections['start_year']}"
         end_str = f"{selections['end_month']} {selections['end_year']}"
@@ -231,7 +223,7 @@ def reload_graph(outlet: str, chart_element: ui.echart):
         ui.notify(f"Graph Error: {str(e)}", type='negative')
         print(f"Error: {e}")
 
-def reload_bar(outlet: str, chart_element: ui.echart):
+def reload_bar(outlet: str, chart_element: ui.echart, selections:dict):
     try:
         start_str = f"{selections['start_month']} {selections['start_year']}"
         end_str = f"{selections['end_month']} {selections['end_year']}"
@@ -270,6 +262,14 @@ def reload_bar(outlet: str, chart_element: ui.echart):
 
 
 def create_session(outlet:str):
+    selections = {
+    'start_month': MONTHS[0],
+    'start_year': YEARS[0],
+    'end_month': MONTHS[-1],
+    'end_year': YEARS[-1],
+    'scale': SCALES[-1]
+    }
+
     with ui.row().classes('w-full justify-center'):
         ui.markdown(f"#### **{outlet}**")
 
@@ -309,6 +309,6 @@ def create_session(outlet:str):
                 ui.select(options=SCALES, label='Scale', value=SCALES[-1]).classes('w-32 self-center').bind_value(selections, 'scale')\
                     .bind_value(selections, 'scale')\
                     .bind_enabled_from(tabs, 'value', backward=lambda v: v == 'Plots')
-                ui.button(icon='sym_r_replay', on_click=lambda: handle_reload(outlet, stance_chart, graph_chart, graph_spinner, stance_spinner), color='DeepSkyBlue').classes('self-right text-white')
+                ui.button(icon='sym_r_replay', on_click=lambda: handle_reload(outlet, stance_chart, graph_chart, graph_spinner, stance_spinner, selections), color='DeepSkyBlue').classes('self-right text-white')
         
-    ui.timer(0.1, lambda: handle_reload(outlet, stance_chart, graph_chart, graph_spinner, stance_spinner), once=True)
+    ui.timer(0.1, lambda: handle_reload(outlet, stance_chart, graph_chart, graph_spinner, stance_spinner, selections), once=True)
