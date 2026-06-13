@@ -114,7 +114,7 @@ async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.
                 "current": current_est_stances.get(title, 'unknown')
             }
 
-        final_count = len([story for story in combined_stanced_data if story['current'] != 'unknown'])
+        final_count = len([story for story in combined_stanced_data.values() if story['current'] != 'unknown'])
         queue.put_nowait({"status": "running", "msg": f"Extracted Sentiments for {final_count} Articles"})
         logging.info(f"Extracted Sentiments for {final_count} Articles")
         await asyncio.sleep(3)
