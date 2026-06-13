@@ -145,7 +145,7 @@ async def sse_stream(request: Request, request_stories: list[dict[str, str]]):
 
         while True:
             try:
-                item = await asyncio.wait_for(queue.get(), timeout=2.0)
+                item = await asyncio.wait_for(queue.get(), timeout=1.0)
                 yield f"data: {json.dumps(item)}\n\n"
                 
                 if item["status"] in ["finished", "error"]:
