@@ -113,14 +113,15 @@ async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.
                 "historical": historical_est_stances.get(title, 'unknown'),
                 "current": current_est_stances.get(title, 'unknown')
             }
-        
-        queue.put_nowait({"status": "running", "msg": f"Extracted Sentiments for {len(combined_stanced_data)} Articles"})
-        logging.info(f"Extracted Sentiments for {len(combined_stanced_data)} Articles")
-        await asyncio.sleep(1.5)
+
+        final_count = len([story for story in combined_stanced_data if story['current'] != 'unknown'])
+        queue.put_nowait({"status": "running", "msg": f"Extracted Sentiments for {final_count} Articles"})
+        logging.info(f"Extracted Sentiments for {final_count} Articles")
+        await asyncio.sleep(3)
 
         del request_stories, decoded_stories, parsed_stories
         del data, story_datapoints_tracker, sentiments
-        del current_est_stances, historical_est_stances
+        del current_est_stances, historical_est_stances, final_count
         gc.collect()
 
         queue.put_nowait({"status": "finished", "data": combined_stanced_data})
