@@ -163,21 +163,24 @@ async def sse_stream(request: Request, request_stories: list[dict[str, str]]):
     except ValueError as e:
         yield f"data: {json.dumps({'status':'error', 'msg': f'Invalid data - {str(e)}', 'error_type':'ValueError'})}\n\n"
         logging.error(f"Invalid data: {str(e)}")
-        print("FAIL:     Invalid data")
+        #print("FAIL:     Invalid data")
     
     except RateLimitExceeded as e:
         yield f"data: {json.dumps({'status':'error', 'msg': f'Rate limit exceeded - 1 req/min (429)', 'error_type':'RateLimitError'})}\n\n"
         logging.error(f"Rate limit exceeded: {str(e)}")
-        print("FAIL:     Rate limit exceeded")
+        #print("FAIL:     Rate limit exceeded")
     
     except Exception as e:
         traceback.print_exc()
         yield f"data: {json.dumps({'status':'error', 'msg': f'Internal server error - {str(e)}', 'error_type':'ServerError'})}\n\n"
         logging.error(f"Internal server error: {str(e)}")
-        print("FAIL:     Internal server error")
+        #print("FAIL:     Internal server error")
         
     finally:
         spinner.remove_task(task_id)
+        if not worker_task.done():
+            worker_task.cancel()
+            logging.info("Task Quit: Client not reachable")
 
 @api.post(
     "/api/v0/colour",
