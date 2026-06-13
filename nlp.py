@@ -109,7 +109,7 @@ def fuzzy_affiliates(doc):
 
 nlp.add_pipe("fuzzy_affiliation", after='ner')
 
-def batch_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], batch_size=16):
+def ner_block(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], batch_size=16):
     data = []
     texts = [story.get('text', '') for story in stories]
     #for text in texts: print(text, end='\n\n')
@@ -131,16 +131,16 @@ def batch_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], ba
             
             story_datapoints_tracker.append(data_count)
             del doc
-    
-    if data:
 
+    return data, story_datapoints_tracker
+
+def tone_block(data, story_datapoints_tracker, batch_size=16):
+    if data:
         with torch.no_grad():
             sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
         return data, story_datapoints_tracker, sentiments
-    
     else:
-
-        logging.warning("<NLP> Could not find ANY relavant entities!")
+        logging.warning("NLP - Could not find ANY relavant entities!")
         return [], [], []
 
 
@@ -184,14 +184,5 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
         
         i += k
 
-    
-    return stories
-
-def stories_with_nlp(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], batch_size=16):
-    data, tracker, sentiments = batch_nlp(stories, entity_type, batch_size)
-    final_stories = label_stories(stories, entity_type, data, tracker, sentiments)
-    formatted_stories = {story['title']:story[f'{entity_type}_label'] for story in final_stories}
-
-    del data, tracker, sentiments, final_stories
-    gc.collect()
+    formatted_stories = {story['title']:story[f'{entity_type}_label'] for story in stories}
     return formatted_stories

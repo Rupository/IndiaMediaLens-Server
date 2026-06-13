@@ -58,15 +58,6 @@ def load_global_data():
         HISTORICAL_DF = df
     return HISTORICAL_DF
 
-'''def process_data() -> pd.DataFrame: 
-    # modularizing this, so when more datasets are added we can merge their data
-    elec_data = pd.read_csv('data/historical/elections_annotated_vectors.csv')
-    elec_data.apply(source_correction, axis=1)
-
-    elec_data['vectors'] = elec_data['vectors'].apply(parse_nparray_str) # pyright: ignore[reportCallIssue, reportArgumentType]
-    elec_data['publish_date'] = pd.to_datetime(elec_data['publish_date'])
-    df = elec_data
-    return df'''
 
 def get_cumulative_stance_data(start_date:dt, end_date:dt) -> pd.DataFrame:
     if start_date > end_date:

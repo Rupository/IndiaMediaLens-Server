@@ -22,6 +22,7 @@ options = ChromeOptions()
 options.page_load_strategy = 'eager'
 options.add_argument("--headless=new")
 options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
 
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--disable-dev-shm-usage")
@@ -43,10 +44,13 @@ THREAD_EXEC = ThreadPoolExecutor(max_workers=20)
 
 # make a pre warmed pool of 10 drivers (chromium heads)
 DRIVER_POOL = queue.Queue()
-for _ in range(10):DRIVER_POOL.put(webdriver.Chrome(options=options))
+for _ in range(10):
+    driver = webdriver.Chrome(options=options)
+    driver.set_page_load_timeout(20) 
+    DRIVER_POOL.put(driver)
 
 def get_selenium_html(url):
-    driver = DRIVER_POOL.get()
+    driver = DRIVER_POOL.get(timeout=10)
     try:
         driver.get(url)
         article_html = driver.page_source
@@ -127,7 +131,6 @@ def parse_url(url) -> str | None:
                     del article
 
                     if text == '':
-                        text = ''
                         logging.error(f"Final Attempt: Unable to extact article text for [{url}]") # if it still fails, can't circumvent.
                     else:
                         logging.info(f'Retry succeeded for [{url}]!')
@@ -177,14 +180,13 @@ def decode_urls_parallel(stories:list[dict[str|str]], max_threads=15):
 
     return stories
 
-def get_full_stories(request_stories:list[dict[str,str]]):
+def decoding_block(request_stories: list[dict[str,str]]):
     stories = decode_urls_parallel(request_stories)
-    stories = [story for story in stories if story['url'] != '']
-    parsed_stories = parse_stories_parallel(stories)
-    processed_stories = [story for story in stories if story['text'] != '']
-    gc.collect()
+    return [story for story in stories if story['url'] != '']
 
-    return processed_stories
+def scraping_block(stories: list[dict[str,str]]):
+    stories = parse_stories_parallel(stories)
+    return [story for story in stories if story['text'] != '']
 
 def shutdown_selenium_pool():
     while not DRIVER_POOL.empty():
