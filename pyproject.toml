@@ -1,6 +1,6 @@
 [project]
 name = "viewfinder-server"
-version = "0.1.1"
+version = "0.1.4"
 description = "Backend for ViewFinder (IndiaMediaLens 2.0)"
 readme = "README.md"
 

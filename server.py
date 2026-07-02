@@ -48,10 +48,10 @@ limiter = Limiter(key_func=get_ip)
 api.state.limiter = limiter
 api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-BLOCK_DECODE = asyncio.BoundedSemaphore(2)
-BLOCK_SCRAPE = asyncio.BoundedSemaphore(2)
-BLOCK_NER = asyncio.BoundedSemaphore(2)
-BLOCK_TONE = asyncio.BoundedSemaphore(2)
+PHASE_DECODE = asyncio.BoundedSemaphore(2)
+PHASE_SCRAPE = asyncio.BoundedSemaphore(2)
+PHASE_NER = asyncio.BoundedSemaphore(2)
+PHASE_TONE = asyncio.BoundedSemaphore(2)
 
 cumulative_stance_data = None
 
@@ -74,28 +74,28 @@ def _rate_limit_check(request:Request):
 async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.Queue, task_id):
     try:
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
-        async with BLOCK_DECODE:
+        async with PHASE_DECODE:
             queue.put_nowait({"status": "running", "msg": f"Decoding {len(request_stories)} URLs (1/4)"})
             spinner.update(task_id, advance=1, description=f'Decoding {len(request_stories)} URLs (1/4)')
             logging.info(f"Decoding {len(request_stories)} URLs (1/4)")
             decoded_stories = await asyncio.to_thread(decoding_block, request_stories)
 
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
-        async with BLOCK_SCRAPE:
+        async with PHASE_SCRAPE:
             queue.put_nowait({"status": "running", "msg": f"Scraping {len(decoded_stories)} Articles (2/4)"})
             spinner.update(task_id, advance=1, description=f'Scraping {len(decoded_stories)} Articles (2/4)')
             logging.info(f"Scraping {len(decoded_stories)} Articles (2/4)")
             parsed_stories = await asyncio.to_thread(scraping_block, decoded_stories)
 
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
-        async with BLOCK_NER:
+        async with PHASE_NER:
             queue.put_nowait({"status": "running", "msg": f"Performing NER on {len(parsed_stories)} Articles (3/4)"})
             spinner.update(task_id, advance=1, description=f'Performing NER on {len(parsed_stories)} Articles (3/4)')
             logging.info(f"Performing NER on {len(parsed_stories)} Articles (3/4)")
             data, story_datapoints_tracker = await asyncio.to_thread(ner_block, parsed_stories, 'EST')
         
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
-        async with BLOCK_TONE:
+        async with PHASE_TONE:
             queue.put_nowait({"status": "running", "msg": f"Analyzing Sentiments in {len(data)} Sentences (4/4)"})
             spinner.update(task_id, advance=1, description=f'Analyzing Sentiments in {len(data)} Sentences (4/4)')
             logging.info(f"Analyzing Sentiments in {len(data)} Sentences (4/4)")
