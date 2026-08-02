@@ -198,7 +198,7 @@ async def colour(request: Request, request_data: ColourRequest):
 
 @ui.page("/historical/visualization/{outlet}")
 async def data_visualization(outlet:str):
-    visualization.create_session(outlet)
+    visualization.create_historical_session(outlet)
 
 api.mount('/ui', app)
 ui.run_with(api, mount_path='/ui', storage_secret='findher.ogg', reconnect_timeout=30.0)
