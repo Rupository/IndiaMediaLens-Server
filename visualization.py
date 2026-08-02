@@ -3,7 +3,7 @@ import pandas as pd
 import asyncio
 from datetime import datetime as dt
 import calendar
-from historical import OUTLET_TO_DOMAIN, get_stance_series, get_similarity_graph_data
+from historical import OUTLET_TO_DOMAIN, get_cumulative_stance_data, get_stance_series, get_similarity_graph_data
 
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 YEARS = [str(y) for y in range(2019, 2025)]
@@ -115,13 +115,18 @@ def get_graph_options(nodes: list, links: list, meta: dict):
         }]
     }
 
-def get_pie_options(df: pd.DataFrame):
+def get_pie_options(df: pd.DataFrame, domain:str):
 
     if df.empty:
         return {
             'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}
         }
 
+    row = df.loc[domain]
+
+    pro = int(row.get('pro count', 0))
+    neutral = int(row.get('neutral count', 0))
+    anti = int(row.get('anti count', 0))
     
     return {
         'tooltip': {
@@ -129,7 +134,7 @@ def get_pie_options(df: pd.DataFrame):
         },
         'legend': {
             'orient': 'horizontal',
-            'top': 'top'
+            'top': '20'
         },
         'series': [
             {
@@ -138,9 +143,9 @@ def get_pie_options(df: pd.DataFrame):
             'radius': '40%',
             'label': { 'show': False },
             'data': [
-                { 'value': df['pro'].sum(), 'name': 'pro', 'itemStyle': { 'color': COLOR_MAP['pro'] } },
-                { 'value': df['neutral'].sum(), 'name': 'neutral', 'itemStyle': { 'color': COLOR_MAP['neutral'] } },
-                { 'value': df['anti'].sum(), 'name': 'anti', 'itemStyle': { 'color': COLOR_MAP['anti'] } },
+                { 'value': pro, 'name': 'pro', 'itemStyle': { 'color': COLOR_MAP['pro'] } },
+                { 'value': neutral, 'name': 'neutral', 'itemStyle': { 'color': COLOR_MAP['neutral'] } },
+                { 'value': anti, 'name': 'anti', 'itemStyle': { 'color': COLOR_MAP['anti'] } },
             ],
             'emphasis': {
                 'itemStyle': {
@@ -269,7 +274,6 @@ def reload_pie(outlet: str, chart_element: ui.echart, selections:dict):
     try:
         start_str = f"{selections['start_month']} {selections['start_year']}"
         end_str = f"{selections['end_month']} {selections['end_year']}"
-        scale = selections['scale']
 
         if outlet in OUTLET_TO_DOMAIN:
             domain = OUTLET_TO_DOMAIN[outlet]
@@ -278,10 +282,9 @@ def reload_pie(outlet: str, chart_element: ui.echart, selections:dict):
             chart_element.options.update({
             'title': {
                 'text': 'Data unavailable',
-                'left': 'center', 
+                'left': 'center',
                 'top': 'center'
-            },
-            'xAxis': {'show': False}, 'yAxis': {'show': False}
+            }
         })
             return
 
@@ -294,8 +297,8 @@ def reload_pie(outlet: str, chart_element: ui.echart, selections:dict):
             ui.notify("Start date must be before end date!", type='warning')
             return
 
-        df = get_stance_series(start_date, end_date, scale, domain)
-        new_options = get_pie_options(df)
+        df = get_cumulative_stance_data(start_date, end_date)
+        new_options = get_pie_options(df, domain)
         chart_element.options.clear()
         chart_element.options.update(new_options)
 
