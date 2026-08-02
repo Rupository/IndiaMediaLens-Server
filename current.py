@@ -33,13 +33,6 @@ options.add_argument("--blink-settings=imagesEnabled=false")
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option('useAutomationExtension', False)
 
-prefs = {
-    "profile.managed_default_content_settings.images": 2,
-    "profile.managed_default_content_settings.stylesheets": 2,
-    "profile.managed_default_content_settings.fonts": 2,
-    "profile.managed_default_content_settings.media_stream": 2
-}
-
 THREAD_EXEC = ThreadPoolExecutor(max_workers=20)
 
 # make a pre warmed pool of 10 drivers (chromium heads)
@@ -82,7 +75,7 @@ def parse_url(url) -> str | None:
     
     except (ArticleException, LookupError) as e1:
         try: # second attempt (identical)
-            if str(e1).find('403') != -1 or isinstance(e1, LookupError):
+            if str(e1).find(' 403 ') != -1 or isinstance(e1, LookupError):
                 article = Article(url)
                 article.download()
                 article.parse()
@@ -103,7 +96,7 @@ def parse_url(url) -> str | None:
             
         except (ArticleException, LookupError) as e2:
             try: # 3rd attempt (with config)
-                if str(e2).find('403') != -1 or isinstance(e2, LookupError):
+                if str(e2).find(' 403 ') != -1 or isinstance(e2, LookupError):
                     article = Article(url, config=config)
                     article.download()
                     article.parse()
@@ -123,7 +116,7 @@ def parse_url(url) -> str | None:
 
             except (ArticleException, LookupError) as e3:
                 # final attempt (config and selenium)
-                if str(e3).find('403') != -1 or isinstance(e3, LookupError):
+                if str(e3).find(' 403 ') != -1 or isinstance(e3, LookupError):
                     article = Article(url, config=config)
                     article.download(input_html = get_selenium_html(url))
                     article.parse()
@@ -144,7 +137,7 @@ def parse_url(url) -> str | None:
 def decode_url(url:str):
     return gnewsdecoder(url)['decoded_url']
 
-def parse_stories_parallel(stories, max_threads=15):
+def parse_stories_parallel(stories):
     future_to_story = {
         THREAD_EXEC.submit(parse_url, story['url']): story 
         for story in stories
@@ -162,7 +155,7 @@ def parse_stories_parallel(stories, max_threads=15):
 
     return stories
 
-def decode_urls_parallel(stories:list[dict[str|str]], max_threads=15):
+def decode_urls_parallel(stories:list[dict[str|str]]):
     future_to_story = {
         THREAD_EXEC.submit(decode_url, story['url']): story 
         for story in stories

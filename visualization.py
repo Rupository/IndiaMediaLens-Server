@@ -11,36 +11,41 @@ SCALES = ['Month', '1/2 Year', '1/4 Year', 'Year']
 COLOR_MAP = {"pro":"#33cc33", "anti":"#ff5050", "neutral":"#ffcc00",}
 
 async def handle_reload(outlet: str, 
-                        stance_chart: ui.echart, 
-                        graph_chart: ui.echart,
-                        graph_spinner: ui.spinner,
-                        stance_spinner: ui.spinner,
+                        pie_chart: ui.echart, 
+                        bar_chart: ui.echart, 
+                        #graph_chart: ui.echart,
+                        pie_spinner: ui.spinner,
+                        bar_spinner: ui.spinner,
+                        #graph_spinner: ui.spinner,
                         selections:dict):
     
-    graph_chart.set_visibility(False)
-    graph_spinner.set_visibility(True)
-    stance_chart.set_visibility(False)
-    stance_spinner.set_visibility(True)
+    pie_chart.set_visibility(False)
+    pie_spinner.set_visibility(True)
+    bar_chart.set_visibility(False)
+    bar_spinner.set_visibility(True)
+    #graph_chart.set_visibility(False)
+    #graph_spinner.set_visibility(True)
     
     await asyncio.sleep(0.1)
 
-    reload_bar(outlet, stance_chart, selections)
-    reload_graph(outlet, graph_chart, selections)
+    reload_pie(outlet, pie_chart, selections)
+    reload_bar(outlet, bar_chart, selections)
+    #reload_graph(outlet, graph_chart, selections)
 
-    graph_chart.set_visibility(True)
-    graph_spinner.set_visibility(False)
-    stance_chart.set_visibility(True)
-    stance_spinner.set_visibility(False)
+    pie_chart.set_visibility(True)
+    pie_spinner.set_visibility(False)
+    bar_chart.set_visibility(True)
+    bar_spinner.set_visibility(False)
+    #graph_chart.set_visibility(True)
+    #graph_spinner.set_visibility(False)
+    
 
 def get_graph_options(nodes: list, links: list, meta: dict):
     if not nodes:
         return {
             'title': {
-                'text': 'Data unavailable',
-                'left': 'center', 
-                'top': 'center'
+                'text': 'Data unavailable', 'left': 'center', 'top': 'center'
             },
-            'xAxis': {'show': False}, 'yAxis': {'show': False}
         }
     
     most_sim = meta.get('most_sim', 'None')
@@ -110,11 +115,48 @@ def get_graph_options(nodes: list, links: list, meta: dict):
         }]
     }
 
+def get_pie_options(df: pd.DataFrame):
+
+    if df.empty:
+        return {
+            'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}
+        }
+
+    
+    return {
+        'tooltip': {
+            'trigger': 'item'
+        },
+        'legend': {
+            'orient': 'horizontal',
+            'top': 'top'
+        },
+        'series': [
+            {
+            'name': 'Political Tone',
+            'type': 'pie',
+            'radius': '40%',
+            'label': { 'show': False },
+            'data': [
+                { 'value': df['pro'].sum(), 'name': 'pro', 'itemStyle': { 'color': COLOR_MAP['pro'] } },
+                { 'value': df['neutral'].sum(), 'name': 'neutral', 'itemStyle': { 'color': COLOR_MAP['neutral'] } },
+                { 'value': df['anti'].sum(), 'name': 'anti', 'itemStyle': { 'color': COLOR_MAP['anti'] } },
+            ],
+            'emphasis': {
+                'itemStyle': {
+                'shadowBlur': 10,
+                'shadowOffsetX': 0,
+                'shadowColor': 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+            }
+        ]
+    }
+
 def get_plot_options(df: pd.DataFrame):
     if df.empty:
         return {
-            'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'},
-            'xAxis': {'show': False}, 'yAxis': {'show': False}
+            'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}
         }
 
     x_axis_data = df['publish_date'].astype(str).tolist()
@@ -223,6 +265,43 @@ def reload_graph(outlet: str, chart_element: ui.echart, selections:dict):
         ui.notify(f"Graph Error: {str(e)}", type='negative')
         print(f"Error: {e}")
 
+def reload_pie(outlet: str, chart_element: ui.echart, selections:dict):
+    try:
+        start_str = f"{selections['start_month']} {selections['start_year']}"
+        end_str = f"{selections['end_month']} {selections['end_year']}"
+        scale = selections['scale']
+
+        if outlet in OUTLET_TO_DOMAIN:
+            domain = OUTLET_TO_DOMAIN[outlet]
+        else: 
+            chart_element.options.clear()
+            chart_element.options.update({
+            'title': {
+                'text': 'Data unavailable',
+                'left': 'center', 
+                'top': 'center'
+            },
+            'xAxis': {'show': False}, 'yAxis': {'show': False}
+        })
+            return
+
+        start_date = dt.strptime(start_str, "%B %Y")
+        end_date = dt.strptime(end_str, "%B %Y")
+        _, last_day = calendar.monthrange(end_date.year, end_date.month)
+        end_date = end_date.replace(day=last_day, hour=23, minute=59, second=59)
+        
+        if start_date > end_date:
+            ui.notify("Start date must be before end date!", type='warning')
+            return
+
+        df = get_stance_series(start_date, end_date, scale, domain)
+        new_options = get_pie_options(df)
+        chart_element.options.clear()
+        chart_element.options.update(new_options)
+
+    except Exception as e:
+        ui.notify(f"Pie Error: {str(e)}", type='negative')
+
 def reload_bar(outlet: str, chart_element: ui.echart, selections:dict):
     try:
         start_str = f"{selections['start_month']} {selections['start_year']}"
@@ -261,7 +340,7 @@ def reload_bar(outlet: str, chart_element: ui.echart, selections:dict):
         ui.notify(f"Plot Error: {str(e)}", type='negative')
 
 
-def create_session(outlet:str):
+def create_historical_session(outlet:str):
     selections = {
     'start_month': MONTHS[0],
     'start_year': YEARS[0],
@@ -274,27 +353,37 @@ def create_session(outlet:str):
         ui.markdown(f"#### **{outlet}**")
 
         with ui.tabs().classes('w-full rounded-lg') as tabs:
-            graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
+            #graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
+            pie = ui.tab('Pie', label='Pie Chart', icon='sym_r_clock_loader_40')
             plot = ui.tab('Plots', label='Time series', icon='sym_r_stacked_bar_chart')
 
-        with ui.tab_panels(tabs, value=graph).classes('w-full'):
-            with ui.tab_panel(graph):
+        with ui.tab_panels(tabs, value=pie).classes('w-full'):
+            '''with ui.tab_panel(graph):
                 with ui.card().classes('w-full p-0 border-2 h-110 relative'):
                     graph_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full')
                     
                     graph_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
                         .classes('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10') \
                         .props('thickness=5') 
-                    graph_spinner.set_visibility(False)
+                    graph_spinner.set_visibility(False)'''
+                
+            with ui.tab_panel(pie):
+                with ui.card().classes('w-full p-0 border-2 h-110 relative'):
+                    pie_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full') 
+                    
+                    pie_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
+                        .classes('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10') \
+                        .props('thickness=5')
+                    pie_spinner.set_visibility(False)
 
             with ui.tab_panel(plot):
                 with ui.card().classes('w-full p-0 border-2 h-110 relative'):
-                    stance_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full') 
+                    bar_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full') 
                     
-                    stance_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
+                    bar_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
                         .classes('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10') \
                         .props('thickness=5')
-                    stance_spinner.set_visibility(False)
+                    bar_spinner.set_visibility(False)
 
         with ui.column().classes('w-full mt-2'):
             with ui.row().classes('items-center no-wrap self-center'):
@@ -309,6 +398,23 @@ def create_session(outlet:str):
                 ui.select(options=SCALES, label='Scale', value=SCALES[-1]).classes('w-32 self-center').bind_value(selections, 'scale')\
                     .bind_value(selections, 'scale')\
                     .bind_enabled_from(tabs, 'value', backward=lambda v: v == 'Plots')
-                ui.button(icon='sym_r_replay', on_click=lambda: handle_reload(outlet, stance_chart, graph_chart, graph_spinner, stance_spinner, selections), color='DeepSkyBlue').classes('self-right text-white')
-        
-    ui.timer(0.1, lambda: handle_reload(outlet, stance_chart, graph_chart, graph_spinner, stance_spinner, selections), once=True)
+                ui.button(icon='sym_r_replay', on_click=lambda: handle_reload(outlet,
+                                                                            pie_chart,
+                                                                            bar_chart, 
+                                                                            #graph_chart,
+                                                                            pie_spinner,
+                                                                            bar_spinner,
+                                                                            #graph_spinner,
+                                                                            selections), color='DeepSkyBlue').classes('self-right text-white')
+    ui.timer(0.1, lambda: handle_reload(outlet,
+                                        pie_chart,
+                                        bar_chart, 
+                                        #graph_chart,
+                                        pie_spinner,
+                                        bar_spinner,
+                                        #graph_spinner, 
+                                        selections), once=True)
+
+
+def create_current_session():
+    pass
