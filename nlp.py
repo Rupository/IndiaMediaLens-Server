@@ -112,7 +112,6 @@ nlp.add_pipe("fuzzy_affiliation", after='ner')
 def ner_block(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], batch_size=16):
     data = []
     texts = [story.get('text', '') for story in stories]
-    #for text in texts: print(text, end='\n\n')
     story_datapoints_tracker = [] # for the story at the i'th index, how many newsmtsc tuples it has
     
     with torch.no_grad():
@@ -157,6 +156,7 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
     for story, k in zip(stories, story_datapoints_tracker):
 
         vectors = []
+        datapoints = []
 
         for datapoint, sentiment in zip(data[i:i+k],sentiments[i:i+k]):
             probs = {item['class_label']: item['class_prob'] for item in sentiment}
@@ -165,6 +165,14 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
 
             vector = [probs['positive'], probs['neutral'], probs['negative']]
             vectors.append(vector)
+
+            sent_tone = ['pro', 'neutral', 'anti'][np.argmax(vector)]
+            datapoints.append({
+                'sentence': datapoint,
+                'tone': sent_tone,
+                'confidence': vector,
+                'confidence_%': round(max(vector) * 100, ndigits=4)
+            })
         
         if not vectors:
             story[label] = 'unknown'
@@ -181,7 +189,8 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
             story[label] = 'neutral'
         elif class_index == 2:
             story[label] = 'anti'
+        story['datapoints'] = datapoints
         
         i += k
         
-    return {story['title']:story[label] for story in stories}
+    return {story['title']:story[label] for story in stories}, {story['title']:story.get('datapoints', []) for story in stories}

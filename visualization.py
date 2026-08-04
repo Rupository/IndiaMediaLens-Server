@@ -141,7 +141,6 @@ def get_pie_options(df: pd.DataFrame, domain:str):
             'name': 'Political Tone',
             'type': 'pie',
             'radius': '40%',
-            'label': { 'show': False },
             'data': [
                 { 'value': pro, 'name': 'pro', 'itemStyle': { 'color': COLOR_MAP['pro'] } },
                 { 'value': neutral, 'name': 'neutral', 'itemStyle': { 'color': COLOR_MAP['neutral'] } },
@@ -417,7 +416,3 @@ def create_historical_session(outlet:str):
                                         bar_spinner,
                                         #graph_spinner, 
                                         selections), once=True)
-
-
-def create_current_session():
-    pass

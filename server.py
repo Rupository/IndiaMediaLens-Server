@@ -42,7 +42,7 @@ class ErrorResponse(BaseModel):
 def get_ip(request:Request):
     return request.headers.get("CF-Connecting-IP")
 
-api = FastAPI(title="IndiaMediaLens Server API", version="0.1.4")
+api = FastAPI(title="IndiaMediaLens Server API", version="0.1.6")
 
 limiter = Limiter(key_func=get_ip)
 api.state.limiter = limiter
@@ -103,7 +103,7 @@ async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.
 
         queue.put_nowait({"status": "running", "msg": "Tidying Up"})
         spinner.update(task_id, advance=1, description='Tidying Up')
-        current_est_stances = label_stories(parsed_stories, 'EST', data, story_datapoints_tracker, sentiments)
+        current_est_stances, current_est_sents = label_stories(parsed_stories, 'EST', data, story_datapoints_tracker, sentiments)
         historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data)
         combined_stanced_data = {}
 
@@ -111,7 +111,8 @@ async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.
             title = story['title']
             combined_stanced_data[title] = {
                 "historical": historical_est_stances.get(title, 'unknown'),
-                "current": current_est_stances.get(title, 'unknown')
+                "current": current_est_stances.get(title, 'unknown'),
+                "current_sents": current_est_sents.get(title, [])
             }
 
         final_count = len([story for story in combined_stanced_data.values() if story['current'] != 'unknown'])
