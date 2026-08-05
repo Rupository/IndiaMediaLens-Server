@@ -170,8 +170,8 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
             datapoints.append({
                 'sentence': datapoint,
                 'tone': sent_tone,
-                'confidence': round(max(vector) * 100, ndigits=2),
-                'vector': [round((elem) * 100, ndigits=2) for elem in vector]
+                'confidence': round(max(vector) * 100, 2),
+                'vector': [round((elem) * 100, 2) for elem in vector]
             })
         
         if not vectors:
