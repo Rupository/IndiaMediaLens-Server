@@ -150,7 +150,7 @@ def label_stories(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP']
     if data == []:
         for story in stories:
             story[label] = 'unknown'
-        return {story['title']:story[label] for story in stories}
+        return {story['title']:story[label] for story in stories}, {story['title']: [] for story in stories}
     
     i = 0
     for story, k in zip(stories, story_datapoints_tracker):
