@@ -352,7 +352,7 @@ def create_historical_session(outlet:str):
     ui.add_css('''
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
     body {
-        animation: fadeIn 0.6s ease-out;
+        animation: fadeIn 1.0s ease-out;
     }
 
     @keyframes fadeIn {
