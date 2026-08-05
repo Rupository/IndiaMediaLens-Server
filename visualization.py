@@ -130,6 +130,7 @@ def get_pie_options(df: pd.DataFrame, domain:str):
     
     return {
         'legend': {
+            'data': ['pro', 'neutral', 'anti'],
             'orient': 'horizontal',
             'top': '20'
         },
@@ -355,7 +356,7 @@ def create_historical_session(outlet:str):
     ''')
 
     with ui.row().classes('w-full justify-center'):
-        ui.markdown(f"#### **{outlet}**")
+        ui.markdown(f"#### **{outlet}**").style('font-family: "Quicksand";')
 
         with ui.tabs().classes('w-full rounded-lg') as tabs:
             #graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
