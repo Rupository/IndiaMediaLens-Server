@@ -19,22 +19,22 @@ async def handle_reload(outlet: str,
                         #graph_spinner: ui.spinner,
                         selections:dict):
     
-    pie_chart.set_visibility(False)
+    #pie_chart.set_visibility(False)
     #pie_spinner.set_visibility(True)
-    bar_chart.set_visibility(False)
+    #bar_chart.set_visibility(False)
     bar_spinner.set_visibility(True)
     #graph_chart.set_visibility(False)
     #graph_spinner.set_visibility(True)
     
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.01)
 
     reload_pie(outlet, pie_chart, selections)
     reload_bar(outlet, bar_chart, selections)
     #reload_graph(outlet, graph_chart, selections)
 
-    pie_chart.set_visibility(True)
+    #pie_chart.set_visibility(True)
     #pie_spinner.set_visibility(False)
-    bar_chart.set_visibility(True)
+    #bar_chart.set_visibility(True)
     bar_spinner.set_visibility(False)
     #graph_chart.set_visibility(True)
     #graph_spinner.set_visibility(False)
@@ -412,7 +412,7 @@ def create_historical_session(outlet:str):
                                                                             bar_spinner,
                                                                             #graph_spinner,
                                                                             selections), color='DeepSkyBlue').classes('self-right text-white')
-    ui.timer(0.1, lambda: handle_reload(outlet,
+    ui.timer(0.01, lambda: handle_reload(outlet,
                                         pie_chart,
                                         bar_chart, 
                                         #graph_chart,
