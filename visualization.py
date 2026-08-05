@@ -115,44 +115,41 @@ def get_graph_options(nodes: list, links: list, meta: dict):
         }]
     }
 
-def get_pie_options(df: pd.DataFrame, domain:str):
-
+def get_pie_options(df: pd.DataFrame, domain: str):
     if df.empty:
-        return {
-            'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}
-        }
+        return {'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}}
 
     row = df.loc[domain]
-
     pro = int(row.get('pro count', 0))
     neutral = int(row.get('neutral count', 0))
     anti = int(row.get('anti count', 0))
-    
+
     return {
         'legend': {
             'data': ['pro', 'neutral', 'anti'],
             'orient': 'horizontal',
             'top': '20'
         },
-        'series': [
-            {
+        'series': [{
             'name': 'Political Tone',
             'type': 'pie',
             'radius': '40%',
             'data': [
-                { 'value': pro, 'name': f'{pro}', 'itemStyle': { 'color': COLOR_MAP['pro'] } },
-                { 'value': neutral, 'name': f'{neutral}', 'itemStyle': { 'color': COLOR_MAP['neutral'] } },
-                { 'value': anti, 'name': f'{anti}', 'itemStyle': { 'color': COLOR_MAP['anti'] } },
+                {'value': pro, 'name': 'pro', 'itemStyle': {'color': COLOR_MAP['pro']}},
+                {'value': neutral, 'name': 'neutral', 'itemStyle': {'color': COLOR_MAP['neutral']}},
+                {'value': anti, 'name': 'anti', 'itemStyle': {'color': COLOR_MAP['anti']}},
             ],
+            'label': {
+                'formatter': '{c}'
+            },
             'emphasis': {
                 'itemStyle': {
-                'shadowBlur': 10,
-                'shadowOffsetX': 0,
-                'shadowColor': 'rgba(0, 0, 0, 0.5)'
+                    'shadowBlur': 10,
+                    'shadowOffsetX': 0,
+                    'shadowColor': 'rgba(0, 0, 0, 0.5)'
                 }
             }
-            }
-        ]
+        }]
     }
 
 def get_plot_options(df: pd.DataFrame):
@@ -162,6 +159,7 @@ def get_plot_options(df: pd.DataFrame):
         }
 
     x_axis_data = df['publish_date'].astype(str).tolist()
+    quicksand_style = {'fontFamily': 'Quicksand, sans-serif'}
 
     tooltip_formatter = (
         '<div style="text-align:center;">'
@@ -174,6 +172,8 @@ def get_plot_options(df: pd.DataFrame):
     )
 
     return {
+        'textStyle': quicksand_style,
+        
         'tooltip': {
             'trigger': 'axis', 
             'confine': True, 
