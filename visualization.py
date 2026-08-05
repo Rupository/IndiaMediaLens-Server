@@ -14,13 +14,13 @@ async def handle_reload(outlet: str,
                         pie_chart: ui.echart, 
                         bar_chart: ui.echart, 
                         #graph_chart: ui.echart,
-                        pie_spinner: ui.spinner,
+                        #pie_spinner: ui.spinner,
                         bar_spinner: ui.spinner,
                         #graph_spinner: ui.spinner,
                         selections:dict):
     
     pie_chart.set_visibility(False)
-    pie_spinner.set_visibility(True)
+    #pie_spinner.set_visibility(True)
     bar_chart.set_visibility(False)
     bar_spinner.set_visibility(True)
     #graph_chart.set_visibility(False)
@@ -33,7 +33,7 @@ async def handle_reload(outlet: str,
     #reload_graph(outlet, graph_chart, selections)
 
     pie_chart.set_visibility(True)
-    pie_spinner.set_visibility(False)
+    #pie_spinner.set_visibility(False)
     bar_chart.set_visibility(True)
     bar_spinner.set_visibility(False)
     #graph_chart.set_visibility(True)
@@ -129,9 +129,6 @@ def get_pie_options(df: pd.DataFrame, domain:str):
     anti = int(row.get('anti count', 0))
     
     return {
-        'tooltip': {
-            'trigger': 'item'
-        },
         'legend': {
             'orient': 'horizontal',
             'top': '20'
@@ -142,9 +139,9 @@ def get_pie_options(df: pd.DataFrame, domain:str):
             'type': 'pie',
             'radius': '40%',
             'data': [
-                { 'value': pro, 'name': 'pro', 'itemStyle': { 'color': COLOR_MAP['pro'] } },
-                { 'value': neutral, 'name': 'neutral', 'itemStyle': { 'color': COLOR_MAP['neutral'] } },
-                { 'value': anti, 'name': 'anti', 'itemStyle': { 'color': COLOR_MAP['anti'] } },
+                { 'value': pro, 'name': f'{pro}', 'itemStyle': { 'color': COLOR_MAP['pro'] } },
+                { 'value': neutral, 'name': f'{neutral}', 'itemStyle': { 'color': COLOR_MAP['neutral'] } },
+                { 'value': anti, 'name': f'{anti}', 'itemStyle': { 'color': COLOR_MAP['anti'] } },
             ],
             'emphasis': {
                 'itemStyle': {
@@ -351,13 +348,19 @@ def create_historical_session(outlet:str):
     'scale': SCALES[-1]
     }
 
+    ui.add_css('''
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+
+
+    ''')
+
     with ui.row().classes('w-full justify-center'):
         ui.markdown(f"#### **{outlet}**")
 
         with ui.tabs().classes('w-full rounded-lg') as tabs:
             #graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
-            pie = ui.tab('Pie', label='Pie Chart', icon='sym_r_clock_loader_40')
-            plot = ui.tab('Plots', label='Time series', icon='sym_r_stacked_bar_chart')
+            pie = ui.tab('Pie', label='Pie Chart', icon='sym_r_clock_loader_40').style('font-family: "Quicksand";')
+            plot = ui.tab('Plots', label='Time series', icon='sym_r_stacked_bar_chart').style('font-family: "Quicksand";')
 
         with ui.tab_panels(tabs, value=pie).classes('w-full'):
             '''with ui.tab_panel(graph):
@@ -371,16 +374,16 @@ def create_historical_session(outlet:str):
                 
             with ui.tab_panel(pie):
                 with ui.card().classes('w-full p-0 border-2 h-110 relative'):
-                    pie_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full') 
+                    pie_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full').style('font-family: "Quicksand";')
                     
-                    pie_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
+                    '''pie_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
                         .classes('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10') \
                         .props('thickness=5')
-                    pie_spinner.set_visibility(False)
+                    pie_spinner.set_visibility(False)'''
 
             with ui.tab_panel(plot):
                 with ui.card().classes('w-full p-0 border-2 h-110 relative'):
-                    bar_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full') 
+                    bar_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full').style('font-family: "Quicksand";')
                     
                     bar_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
                         .classes('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10') \
@@ -389,22 +392,22 @@ def create_historical_session(outlet:str):
 
         with ui.column().classes('w-full mt-2'):
             with ui.row().classes('items-center no-wrap self-center'):
-                ui.select(options=MONTHS, label='Start Month', value=MONTHS[0]).classes('w-32').bind_value(selections, 'start_month')
-                ui.select(options=YEARS, label='Start Year', value=YEARS[0]).classes('w-32').bind_value(selections, 'start_year')
+                ui.select(options=MONTHS, label='Start Month', value=MONTHS[0]).classes('w-32').bind_value(selections, 'start_month').style('font-family: "Quicksand";')
+                ui.select(options=YEARS, label='Start Year', value=YEARS[0]).classes('w-32').bind_value(selections, 'start_year').style('font-family: "Quicksand";')
 
             with ui.row().classes('items-center no-wrap self-center'):
-                ui.select(options=MONTHS, label='End Month', value=MONTHS[-1]).classes('w-32').bind_value(selections, 'end_month')
-                ui.select(options=YEARS, label='End Year', value=YEARS[-1]).classes('w-32').bind_value(selections, 'end_year')
+                ui.select(options=MONTHS, label='End Month', value=MONTHS[-1]).classes('w-32').bind_value(selections, 'end_month').style('font-family: "Quicksand";')
+                ui.select(options=YEARS, label='End Year', value=YEARS[-1]).classes('w-32').bind_value(selections, 'end_year').style('font-family: "Quicksand";')
 
             with ui.row().classes('items-center no-wrap self-center'):
-                ui.select(options=SCALES, label='Scale', value=SCALES[-1]).classes('w-32 self-center').bind_value(selections, 'scale')\
+                ui.select(options=SCALES, label='Scale', value=SCALES[-1]).classes('w-32 self-center').style('font-family: "Quicksand";').bind_value(selections, 'scale')\
                     .bind_value(selections, 'scale')\
                     .bind_enabled_from(tabs, 'value', backward=lambda v: v == 'Plots')
                 ui.button(icon='sym_r_replay', on_click=lambda: handle_reload(outlet,
                                                                             pie_chart,
                                                                             bar_chart, 
                                                                             #graph_chart,
-                                                                            pie_spinner,
+                                                                            #pie_spinner,
                                                                             bar_spinner,
                                                                             #graph_spinner,
                                                                             selections), color='DeepSkyBlue').classes('self-right text-white')
@@ -412,7 +415,7 @@ def create_historical_session(outlet:str):
                                         pie_chart,
                                         bar_chart, 
                                         #graph_chart,
-                                        pie_spinner,
+                                        #pie_spinner,
                                         bar_spinner,
                                         #graph_spinner, 
                                         selections), once=True)
