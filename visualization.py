@@ -351,8 +351,14 @@ def create_historical_session(outlet:str):
 
     ui.add_css('''
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+    body {
+        animation: fadeIn 0.4s ease-out;
+    }
 
-
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
     ''')
 
     with ui.row().classes('w-full justify-center'):
