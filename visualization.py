@@ -125,6 +125,8 @@ def get_pie_options(df: pd.DataFrame, domain: str):
     anti = int(row.get('anti count', 0))
 
     return {
+        'textStyle': {'fontFamily': 'Quicksand, sans-serif'},
+
         'legend': {
             'data': ['pro', 'neutral', 'anti'],
             'orient': 'horizontal',
@@ -159,7 +161,6 @@ def get_plot_options(df: pd.DataFrame):
         }
 
     x_axis_data = df['publish_date'].astype(str).tolist()
-    quicksand_style = {'fontFamily': 'Quicksand, sans-serif'}
 
     tooltip_formatter = (
         '<div style="text-align:center;">'
@@ -172,7 +173,7 @@ def get_plot_options(df: pd.DataFrame):
     )
 
     return {
-        'textStyle': quicksand_style,
+        'textStyle': {'fontFamily': 'Quicksand, sans-serif'},
         
         'tooltip': {
             'trigger': 'axis', 
