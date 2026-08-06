@@ -35,6 +35,7 @@ from nlp import ner_block, tone_block, label_stories
 
 class ColourRequest(BaseModel):
     stories: list[dict[str,str]] = Field(..., max_length=80)
+    tone_choice: Literal['EST', 'OPP']
 
 class ErrorResponse(BaseModel):
     error: str
@@ -71,7 +72,7 @@ def shutdown_event():
 def _rate_limit_check(request:Request):
     pass
 
-async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.Queue, task_id):
+async def queued_pipeline(request_stories: list[dict[str, str]], request_choice: Literal['EST', 'OPP'], queue:asyncio.Queue, task_id,):
     try:
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
         async with PHASE_DECODE:
@@ -92,7 +93,7 @@ async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.
             queue.put_nowait({"status": "running", "msg": f"Performing NER on {len(parsed_stories)} Articles (3/4)"})
             spinner.update(task_id, advance=1, description=f'Performing NER on {len(parsed_stories)} Articles (3/4)')
             logging.info(f"Performing NER on {len(parsed_stories)} Articles (3/4)")
-            data, story_datapoints_tracker = await asyncio.to_thread(ner_block, parsed_stories, 'EST')
+            data, story_datapoints_tracker = await asyncio.to_thread(ner_block, parsed_stories, request_choice)
         
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
         async with PHASE_TONE:
@@ -103,7 +104,7 @@ async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.
 
         queue.put_nowait({"status": "running", "msg": "Tidying Up"})
         spinner.update(task_id, advance=1, description='Tidying Up')
-        current_est_stances, current_est_sents = label_stories(parsed_stories, 'EST', data, story_datapoints_tracker, sentiments)
+        current_est_stances, current_est_sents = label_stories(parsed_stories, request_choice, data, story_datapoints_tracker, sentiments)
         historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data)
         combined_stanced_data = {}
 
@@ -132,7 +133,7 @@ async def queued_pipeline(request_stories: list[dict[str, str]], queue: asyncio.
         logging.error(f"Pipeline error: {str(e)}")
         queue.put_nowait({"status": "error", "msg": f"Pipeline error - {str(e)}", "error_type": "ServerError"})
 
-async def sse_stream(request: Request, request_stories: list[dict[str, str]]):
+async def sse_stream(request: Request, request_stories: list[dict[str, str]], request_choice: Literal['EST', 'OPP']):
     task_id = spinner.add_task("Initializing", total=5)
     
     try:
@@ -142,7 +143,7 @@ async def sse_stream(request: Request, request_stories: list[dict[str, str]]):
             raise ValueError("Request stories missing")
 
         queue = asyncio.Queue()
-        worker_task = asyncio.create_task(queued_pipeline(request_stories, queue, task_id))
+        worker_task = asyncio.create_task(queued_pipeline(request_stories, request_choice, queue, task_id))
 
         while True:
             try:
@@ -193,7 +194,7 @@ async def sse_stream(request: Request, request_stories: list[dict[str, str]]):
 async def colour(request: Request, request_data: ColourRequest):
     """Return colour data (streamed)"""
     return StreamingResponse(
-        sse_stream(request, request_data.stories), 
+        sse_stream(request, request_data.stories, request_data.tone_choice), 
         media_type='text/event-stream'
     )
 
