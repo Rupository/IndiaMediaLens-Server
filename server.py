@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from nicegui import ui, app
 from datetime import datetime as dt
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from typing import Literal
 import logging
 
 logging.basicConfig(
