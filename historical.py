@@ -50,7 +50,7 @@ def source_correction(row):
 def load_global_data():
     global HISTORICAL_DF
     if HISTORICAL_DF is None:
-        df = pd.read_parquet('data/historical/elections_opinions_annotated_new.parquet')
+        df = pd.read_parquet('data/historical/elections_reingest_annotated.parquet')
         df['publish_date'] = pd.to_datetime(df['publish_date'])
         #df['vectors'] = df['vectors'].apply(parse_nparray_str)
         df = df.apply(source_correction, axis=1)
