@@ -55,7 +55,8 @@ PHASE_SCRAPE = asyncio.BoundedSemaphore(2)
 PHASE_NER = asyncio.BoundedSemaphore(2)
 PHASE_TONE = asyncio.BoundedSemaphore(2)
 
-cumulative_stance_data = None
+cumulative_stance_data_EST = None
+cumulative_stance_data_OPP = None
 
 @app.on_startup
 def startup_event():
@@ -108,7 +109,12 @@ async def queued_pipeline(request_stories: list[dict[str, str]], request_choice:
         queue.put_nowait({"status": "running", "msg": "Tidying Up"})
         spinner.update(task_id, advance=1, description='Tidying Up')
         current_est_stances, current_est_sents = label_stories(parsed_stories, request_choice, data, story_datapoints_tracker, sentiments)
-        historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data)
+
+        if request_choice=='EST':
+            historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data_EST)
+        elif request_choice=='OPP':
+            historical_est_stances = assign_hist_stance(request_stories, cumulative_stance_data_OPP)
+
         combined_stanced_data = {}
 
         for story in request_stories:

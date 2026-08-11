@@ -118,7 +118,7 @@ def get_graph_options(nodes: list, links: list, meta: dict):
     }
 
 def get_pie_options(df: pd.DataFrame, domain: str):
-    if df.empty:
+    if df.empty or domain not in df.index:
         return {'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}}
 
     row = df.loc[domain]
