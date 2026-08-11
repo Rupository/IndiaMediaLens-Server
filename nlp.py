@@ -12,6 +12,7 @@ from spacy.tokens import Span
 import pandas as pd
 from thefuzz import fuzz, process
 from NewsSentiment import TargetSentimentClassifier
+from NewsSentiment.dataset import TooLongTextException
 import numpy as np
 from typing import Literal
 from functools import lru_cache
@@ -136,7 +137,21 @@ def ner_block(stories:list[dict[str,str]], entity_type:Literal['EST', 'OPP'], ba
 def tone_block(data, story_datapoints_tracker, batch_size=16):
     if data:
         with torch.no_grad():
-            sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
+            try:
+                sentiments = newsmtsc_classifier.infer(targets=data, batch_size=batch_size, disable_tqdm=True)
+            except TooLongTextException:
+                    sentiments = []
+                    for target in data:
+                        try:
+                            s = newsmtsc_classifier.infer(targets=[target], batch_size=1)
+                            sentiments.extend(s)
+                        except TooLongTextException:
+                            print(f"Skipping: {target[1][:50]}...")
+                            sentiments.append((
+                                {'class_id': 1, 'class_label': 'neutral', 'class_prob': 0.0},
+                                {'class_id': 0, 'class_label': 'negative', 'class_prob': 0.0},
+                                {'class_id': 2, 'class_label': 'positive', 'class_prob': 0.0}
+                            ))
         return data, story_datapoints_tracker, sentiments
     else:
         logging.warning("NLP - Could not find ANY relavant entities!")
