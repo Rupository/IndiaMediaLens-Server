@@ -9,27 +9,27 @@ HISTORICAL_DF = None
 OUTLET_TO_DOMAIN = {
         "The Times of India" : "timesofindia.indiatimes.com",
         "Times of India" : "timesofindia.indiatimes.com",
-        #"Times Now": "timesnownews.com",
+        "Times Now": "timesnownews.com",
         "The Economic Times" : "economictimes.indiatimes.com",
-        #"india.com" : "india.com",
-        #"Zee News" : "zeenews.india.com",
-        #"BBC" : "bbc.com", # may drop due to low article counts
+        "india.com" : "india.com",
+        "Zee News" : "zeenews.india.com",
+        "BBC" : "bbc.com", # may drop due to low article counts
         "NDTV" : "ndtv.com",
         "India Today" : "indiatoday.in",
         "Hindustan Times" : "hindustantimes.com",
-        #"Republic World" : "republicworld.com",
+        "Republic World" : "republicworld.com",
         "The Hindu" : "thehindu.com",
-        #"CNN" : "cnn.com", # may drop due to low article counts
+        "CNN" : "cnn.com", # may drop due to low article counts
         "The Indian Express" : "indianexpress.com",
         "ThePrint" : "theprint.in",
         "Rediff MoneyWiz" : "rediff.com", # odd lising of rediff on gnews, may need to be dropped
-        #"Firstpost" : "firstpost.com",
+        "Firstpost" : "firstpost.com",
         "The News Minute" : "thenewsminute.com",
         "The Quint" : "thequint.com",
-        #"TheWire.in" : "thewire.in", # may need to drop because doesn't seem to show up much in gnews clusters
-        #"OpIndia" : "opindia.com",
-        #"DNA India" : "dnaindia.com",
-        #"Telegraph India" : "telegraphindia.com"
+        "TheWire.in" : "thewire.in", # may need to drop because doesn't seem to show up much in gnews clusters
+        "OpIndia" : "opindia.com",
+        "DNA India" : "dnaindia.com",
+        "Telegraph India" : "telegraphindia.com"
     }
 
 def source_correction(row):
