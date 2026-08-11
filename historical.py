@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime as dt
 from sklearn.metrics.pairwise import cosine_similarity
-from typing import Any, Optional
+from typing import Any, Optional, Literal
 
 HISTORICAL_DF = None
 
@@ -59,7 +59,7 @@ def load_global_data():
     return HISTORICAL_DF
 
 
-def get_cumulative_stance_data(start_date:dt, end_date:dt) -> pd.DataFrame:
+def get_cumulative_stance_data(start_date:dt, end_date:dt, tone_choice: Literal['EST', 'OPP']) -> pd.DataFrame:
     if start_date > end_date:
         raise ValueError("start_date must be before or equal to end_date")
     
@@ -67,11 +67,11 @@ def get_cumulative_stance_data(start_date:dt, end_date:dt) -> pd.DataFrame:
     
     mask = (df['publish_date'] >= start_date) & \
            (df['publish_date'] <= end_date) & \
-           (df['EST_label'] != 'unknown')
+           (df[f'{tone_choice}_label'] != 'unknown')
     
     df = df.loc[mask].copy()
 
-    counts = df.groupby(['media_name', 'EST_label']).size().unstack(fill_value=0)
+    counts = df.groupby(['media_name', f'{tone_choice}_label']).size().unstack(fill_value=0)
     for col in ['pro', 'neutral', 'anti']:
         if col not in counts.columns:
             counts[col] = 0
@@ -86,7 +86,7 @@ def get_cumulative_stance_data(start_date:dt, end_date:dt) -> pd.DataFrame:
     outlet_stance = pd.concat([counts, percentages], axis=1)
     return outlet_stance
 
-def get_stance_series(start_date:dt, end_date:dt, scale:str, domain:str):
+def get_stance_series(start_date:dt, end_date:dt, scale:str, domain:str, tone_choice: Literal['EST', 'OPP']):
     if start_date > end_date:
         raise ValueError("start_date must be before or equal to end_date")
     
@@ -95,7 +95,7 @@ def get_stance_series(start_date:dt, end_date:dt, scale:str, domain:str):
     mask = (df['media_name'] == domain) & \
            (df['publish_date'] >= start_date) & \
            (df['publish_date'] <= end_date) & \
-           (df['EST_label'] != 'unknown')
+           (df[f'{tone_choice}_label'] != 'unknown')
            
     df = df.loc[mask].copy()
     
@@ -107,7 +107,7 @@ def get_stance_series(start_date:dt, end_date:dt, scale:str, domain:str):
     
     grouper = pd.Grouper(key='publish_date', freq=freq)
     
-    counts = df.groupby([grouper, 'EST_label']).size().unstack(fill_value=0).rename_axis(None, axis=1)
+    counts = df.groupby([grouper, f'{tone_choice}_label']).size().unstack(fill_value=0).rename_axis(None, axis=1)
     for col in ['pro', 'neutral', 'anti']:
         if col not in counts.columns:
             counts[col] = 0

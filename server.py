@@ -59,8 +59,10 @@ cumulative_stance_data = None
 
 @app.on_startup
 def startup_event():
-    global cumulative_stance_data
-    cumulative_stance_data = get_cumulative_stance_data(start_date=dt(2019, 1, 1), end_date=dt(2024, 12, 31))
+    global cumulative_stance_data_EST
+    global cumulative_stance_data_OPP
+    cumulative_stance_data_EST = get_cumulative_stance_data(start_date=dt(2019, 1, 1), end_date=dt(2024, 12, 31), tone_choice='EST')
+    cumulative_stance_data_OPP = get_cumulative_stance_data(start_date=dt(2019, 1, 1), end_date=dt(2024, 12, 31), tone_choice='OPP')
     spinner.start()
 
 @app.on_shutdown
@@ -199,9 +201,9 @@ async def colour(request: Request, request_data: ColourRequest):
         media_type='text/event-stream'
     )
 
-@ui.page("/historical/visualization/{outlet}")
-async def data_visualization(outlet:str):
-    visualization.create_historical_session(outlet)
+@ui.page("/historical/visualization/{outlet}/{tone_choice}")
+async def data_visualization(outlet:str, tone_choice: Literal['EST', 'OPP']):
+    visualization.create_historical_session(outlet, tone_choice)
 
 api.mount('/ui', app)
 ui.run_with(api, mount_path='/ui', storage_secret='findher.ogg', reconnect_timeout=30.0)

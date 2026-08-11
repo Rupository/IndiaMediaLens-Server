@@ -3,7 +3,8 @@ import pandas as pd
 import asyncio
 from datetime import datetime as dt
 import calendar
-from historical import OUTLET_TO_DOMAIN, get_cumulative_stance_data, get_stance_series, get_similarity_graph_data
+from typing import Literal
+from historical import OUTLET_TO_DOMAIN, get_cumulative_stance_data, get_stance_series#, get_similarity_graph_data
 
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 YEARS = [str(y) for y in range(2019, 2025)]
@@ -17,7 +18,8 @@ async def handle_reload(outlet: str,
                         #pie_spinner: ui.spinner,
                         bar_spinner: ui.spinner,
                         #graph_spinner: ui.spinner,
-                        selections:dict):
+                        selections:dict,
+                        tone_choice:Literal['EST', 'OPP']):
     
     #pie_chart.set_visibility(False)
     #pie_spinner.set_visibility(True)
@@ -28,8 +30,8 @@ async def handle_reload(outlet: str,
     
     await asyncio.sleep(0.01)
 
-    reload_pie(outlet, pie_chart, selections)
-    reload_bar(outlet, bar_chart, selections)
+    reload_pie(outlet, pie_chart, selections, tone_choice)
+    reload_bar(outlet, bar_chart, selections, tone_choice)
     #reload_graph(outlet, graph_chart, selections)
 
     #pie_chart.set_visibility(True)
@@ -268,7 +270,7 @@ def reload_graph(outlet: str, chart_element: ui.echart, selections:dict):
         ui.notify(f"Graph Error: {str(e)}", type='negative')
         print(f"Error: {e}")
 
-def reload_pie(outlet: str, chart_element: ui.echart, selections:dict):
+def reload_pie(outlet: str, chart_element: ui.echart, selections:dict, tone_choice: Literal['EST', 'OPP']):
     try:
         start_str = f"{selections['start_month']} {selections['start_year']}"
         end_str = f"{selections['end_month']} {selections['end_year']}"
@@ -295,7 +297,7 @@ def reload_pie(outlet: str, chart_element: ui.echart, selections:dict):
             ui.notify("Start date must be before end date!", type='warning')
             return
 
-        df = get_cumulative_stance_data(start_date, end_date)
+        df = get_cumulative_stance_data(start_date, end_date, tone_choice)
         new_options = get_pie_options(df, domain)
         chart_element.options.clear()
         chart_element.options.update(new_options)
@@ -303,7 +305,7 @@ def reload_pie(outlet: str, chart_element: ui.echart, selections:dict):
     except Exception as e:
         ui.notify(f"Pie Error: {str(e)}", type='negative')
 
-def reload_bar(outlet: str, chart_element: ui.echart, selections:dict):
+def reload_bar(outlet: str, chart_element: ui.echart, selections:dict, tone_choice:Literal['EST', 'OPP']):
     try:
         start_str = f"{selections['start_month']} {selections['start_year']}"
         end_str = f"{selections['end_month']} {selections['end_year']}"
@@ -332,7 +334,7 @@ def reload_bar(outlet: str, chart_element: ui.echart, selections:dict):
             ui.notify("Start date must be before end date!", type='warning')
             return
 
-        df = get_stance_series(start_date, end_date, scale, domain)
+        df = get_stance_series(start_date, end_date, scale, domain, tone_choice)
         new_options = get_plot_options(df)
         chart_element.options.clear()
         chart_element.options.update(new_options)
@@ -341,7 +343,7 @@ def reload_bar(outlet: str, chart_element: ui.echart, selections:dict):
         ui.notify(f"Plot Error: {str(e)}", type='negative')
 
 
-def create_historical_session(outlet:str):
+def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
     selections = {
     'start_month': MONTHS[0],
     'start_year': YEARS[0],
@@ -418,7 +420,8 @@ def create_historical_session(outlet:str):
                                                                             #pie_spinner,
                                                                             bar_spinner,
                                                                             #graph_spinner,
-                                                                            selections), color='DeepSkyBlue').classes('self-right text-white')
+                                                                            selections, 
+                                                                            tone_choice), color='DeepSkyBlue').classes('self-right text-white')
     ui.timer(0.01, lambda: handle_reload(outlet,
                                         pie_chart,
                                         bar_chart, 
@@ -426,4 +429,5 @@ def create_historical_session(outlet:str):
                                         #pie_spinner,
                                         bar_spinner,
                                         #graph_spinner, 
-                                        selections), once=True)
+                                        selections,
+                                        tone_choice), once=True)
