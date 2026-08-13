@@ -143,7 +143,7 @@ def tone_block(data, story_datapoints_tracker, batch_size=16):
                     sentiments = []
                     for target in data:
                         try:
-                            s = newsmtsc_classifier.infer(targets=[target], batch_size=1)
+                            s = newsmtsc_classifier.infer(targets=[target], batch_size=1, disable_tqdm=True)
                             sentiments.extend(s)
                         except TooLongTextException:
                             print(f"Skipping: {target[1][:50]}...")
