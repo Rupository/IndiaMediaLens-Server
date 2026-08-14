@@ -144,6 +144,7 @@ async def queued_pipeline(request_stories: list[dict[str, str]], request_choice:
 
 async def sse_stream(request: Request, request_stories: list[dict[str, str]], request_choice: Literal['EST', 'OPP']):
     task_id = spinner.add_task("Initializing", total=5)
+    worker_task = None
     
     try:
         _rate_limit_check(request)
@@ -189,7 +190,7 @@ async def sse_stream(request: Request, request_stories: list[dict[str, str]], re
         
     finally:
         spinner.remove_task(task_id)
-        if not worker_task.done():
+        if worker_task is not None and not worker_task.done():
             worker_task.cancel()
             logging.info("Task Quit: Client not reachable")
 
