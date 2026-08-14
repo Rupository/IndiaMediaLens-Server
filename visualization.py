@@ -188,8 +188,8 @@ def get_plot_options(df: pd.DataFrame, scale):
         'tooltip': {
             'trigger': 'axis', 
             'confine': True, 
-            'padding': 4, 
-            'textStyle': {'fontSize': 11},
+            'padding': 10, 
+            'textStyle': {'fontSize': 10, 'lineHeight':15},
         },
 
         'legend': {'data': ['pos', 'neutral', 'neg'], 'top': '20'},
