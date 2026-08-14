@@ -125,9 +125,22 @@ def get_pie_options(df: pd.DataFrame, domain: str):
     pro = int(row.get('pro count', 0))
     neutral = int(row.get('neutral count', 0))
     anti = int(row.get('anti count', 0))
+    total = pro + neutral + anti
 
     return {
         'textStyle': {'fontFamily': 'Quicksand, sans-serif'},
+
+        'title': [
+            {
+                'text': f'{total} articles',
+                'left': 'center',
+                'bottom': '20',
+                'textStyle': {
+                    'fontSize': 14,
+                    'color': '#000000',
+                }
+            }
+        ],
 
         'legend': {
             'data': ['pos', 'neutral', 'neg'],
@@ -156,23 +169,16 @@ def get_pie_options(df: pd.DataFrame, domain: str):
         }]
     }
 
-def get_plot_options(df: pd.DataFrame):
+def get_plot_options(df: pd.DataFrame, scale):
     if df.empty:
         return {
             'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}
         }
 
-    x_axis_data = df['publish_date'].astype(str).tolist()
-
-    tooltip_formatter = (
-        '<div style="text-align:center;">'
-        '<b>{b}</b><br/>'
-        'articles: <b>{c0}</b><br/>'
-        'pos: <b>{c1}</b> %<br/>'
-        'neutral: <b>{c2}</b> %<br/>'
-        'neg: <b>{c3}</b> %'
-        '</div>'
-    )
+    if scale == 'Year':
+        x_axis_data = df['publish_date'].dt.strftime('%Y').tolist()
+    else:
+        x_axis_data = df['publish_date'].astype(str).tolist()
 
     return {
         'textStyle': {'fontFamily': 'Quicksand, sans-serif'},
@@ -182,7 +188,6 @@ def get_plot_options(df: pd.DataFrame):
             'confine': True, 
             'padding': 4, 
             'textStyle': {'fontSize': 11},
-            'formatter': tooltip_formatter
         },
 
         'legend': {'data': ['pos', 'neutral', 'neg'], 'top': '20'},
@@ -335,7 +340,7 @@ def reload_bar(outlet: str, chart_element: ui.echart, selections:dict, tone_choi
             return
 
         df = get_stance_series(start_date, end_date, scale, domain, tone_choice)
-        new_options = get_plot_options(df)
+        new_options = get_plot_options(df, scale)
         chart_element.options.clear()
         chart_element.options.update(new_options)
 
