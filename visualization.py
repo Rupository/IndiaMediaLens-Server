@@ -82,7 +82,7 @@ def get_graph_options(nodes: list, links: list, meta: dict):
     return {
         'title': [info_text_block],
         
-        'legend': [{'data': ['pos', 'neutral', 'neg'], 'top': '20'}],
+        'legend': [{'data': ['positive', 'neutral', 'negative'], 'top': '20'}],
         'tooltip': {
             'trigger': 'item',
             'confine': True,
@@ -98,8 +98,8 @@ def get_graph_options(nodes: list, links: list, meta: dict):
             'data': nodes,
             'links': links,
             'categories': [
-                {'name': 'pos', 'itemStyle': {'color': COLOR_MAP['pro']}},
-                {'name': 'neg', 'itemStyle': {'color': COLOR_MAP['anti']}},
+                {'name': 'positive', 'itemStyle': {'color': COLOR_MAP['pro']}},
+                {'name': 'negative', 'itemStyle': {'color': COLOR_MAP['anti']}},
                 {'name': 'neutral', 'itemStyle': {'color': COLOR_MAP['neutral']}},
                 {'name': 'unknown', 'itemStyle': {'color': '#ccc'}}
             ],
@@ -143,7 +143,7 @@ def get_pie_options(df: pd.DataFrame, domain: str):
         ],
 
         'legend': {
-            'data': ['pos', 'neutral', 'neg'],
+            'data': ['positive', 'neutral', 'negative'],
             'orient': 'horizontal',
             'top': '20'
         },
@@ -152,9 +152,9 @@ def get_pie_options(df: pd.DataFrame, domain: str):
             'type': 'pie',
             'radius': '40%',
             'data': [
-                {'value': pro, 'name': 'pos', 'itemStyle': {'color': COLOR_MAP['pro']}},
+                {'value': pro, 'name': 'positive', 'itemStyle': {'color': COLOR_MAP['pro']}},
                 {'value': neutral, 'name': 'neutral', 'itemStyle': {'color': COLOR_MAP['neutral']}},
-                {'value': anti, 'name': 'neg', 'itemStyle': {'color': COLOR_MAP['anti']}},
+                {'value': anti, 'name': 'negative', 'itemStyle': {'color': COLOR_MAP['anti']}},
             ],
             'label': {
                 'formatter': '{c}'
@@ -192,7 +192,7 @@ def get_plot_options(df: pd.DataFrame, scale):
             'textStyle': {'fontSize': 12, 'lineHeight':15},
         },
 
-        'legend': {'data': ['pos', 'neutral', 'neg'], 'top': '20'},
+        'legend': {'data': ['positive', 'neutral', 'negative'], 'top': '20'},
         'grid': {'left': '10%', 'right': '4%', 'bottom': '20%', 'containLabel': True},
         'xAxis': {'type': 'category', 'data': x_axis_data},
         'yAxis': [{
@@ -225,9 +225,9 @@ def get_plot_options(df: pd.DataFrame, scale):
             {'type': 'inside', 'xAxisIndex': [0], 'start': 0, 'end': 100}
         ],
         'series': [
-            {'name': 'pos', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['pro']}, 'data': df['pro'].round(1).tolist()},
+            {'name': 'positive', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['pro']}, 'data': df['pro'].round(1).tolist()},
             {'name': 'neutral', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['neutral']}, 'data': df['neutral'].round(1).tolist()},
-            {'name': 'neg', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['anti']}, 'data': df['anti'].round(1).tolist()},
+            {'name': 'negative', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['anti']}, 'data': df['anti'].round(1).tolist()},
         ]
     }
 
