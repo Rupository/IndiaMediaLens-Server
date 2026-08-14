@@ -189,7 +189,7 @@ def get_plot_options(df: pd.DataFrame, scale):
             'trigger': 'axis', 
             'confine': True, 
             'padding': 10, 
-            'textStyle': {'fontSize': 10, 'lineHeight':15},
+            'textStyle': {'fontSize': 12, 'lineHeight':15},
         },
 
         'legend': {'data': ['pos', 'neutral', 'neg'], 'top': '20'},
