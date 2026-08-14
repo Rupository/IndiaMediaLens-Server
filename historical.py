@@ -9,6 +9,7 @@ HISTORICAL_DF = None
 OUTLET_TO_DOMAIN = {
         "The Times of India" : "timesofindia.indiatimes.com",
         "Times of India" : "timesofindia.indiatimes.com",
+        "timesofindia.indiatimes.com": "timesofindia.indiatimes.com",
         "Times Now": "timesnownews.com",
         "The Economic Times" : "economictimes.indiatimes.com",
         "india.com" : "india.com",
@@ -114,7 +115,7 @@ def get_stance_series(start_date:dt, end_date:dt, scale:str, domain:str, tone_ch
 
     percentages = counts.div(counts.sum(axis=1), axis=0) * 100
     results = percentages.reset_index()
-    results['publish_date'] = pd.to_datetime(results['publish_date']).dt.strftime('%Y-%m')
+    results['publish_date'] = pd.to_datetime(results['publish_date'])
     results['total_articles'] = counts.sum(axis=1).values
 
     return results

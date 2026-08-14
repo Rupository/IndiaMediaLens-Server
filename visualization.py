@@ -132,11 +132,11 @@ def get_pie_options(df: pd.DataFrame, domain: str):
 
         'title': [
             {
-                'text': f'{total} articles',
+                'text': f'Total: {total}',
                 'left': 'center',
                 'bottom': '20',
                 'textStyle': {
-                    'fontSize': 14,
+                    'fontSize': 10,
                     'color': '#000000',
                 }
             }
@@ -175,10 +175,12 @@ def get_plot_options(df: pd.DataFrame, scale):
             'title': {'text': 'Data unavailable', 'left': 'center', 'top': 'center'}
         }
 
+    df['publish_date'] = pd.to_datetime(df['publish_date'])
+
     if scale == 'Year':
         x_axis_data = df['publish_date'].dt.strftime('%Y').tolist()
     else:
-        x_axis_data = df['publish_date'].astype(str).tolist()
+        x_axis_data = df['publish_date'].dt.strftime('%Y-%m').tolist()
 
     return {
         'textStyle': {'fontFamily': 'Quicksand, sans-serif'},
