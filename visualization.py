@@ -136,7 +136,7 @@ def get_pie_options(df: pd.DataFrame, domain: str):
                 'left': 'center',
                 'bottom': '20',
                 'textStyle': {
-                    'fontSize': 10,
+                    'fontSize': 15,
                     'color': '#000000',
                 }
             }
@@ -225,15 +225,6 @@ def get_plot_options(df: pd.DataFrame, scale):
             {'type': 'inside', 'xAxisIndex': [0], 'start': 0, 'end': 100}
         ],
         'series': [
-            {
-                'name': 'articles',
-                'type': 'line',        
-                'yAxisIndex': 1,       
-                'symbol': 'none',     
-                'lineStyle': {'width': 0},
-                'itemStyle': {'opacity': 0, 'color': 'transparent'},
-                'data': df['total_articles'].tolist()
-            },
             {'name': 'pos', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['pro']}, 'data': df['pro'].round(1).tolist()},
             {'name': 'neutral', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['neutral']}, 'data': df['neutral'].round(1).tolist()},
             {'name': 'neg', 'type': 'bar', 'stack': 'total', 'itemStyle': {'color': COLOR_MAP['anti']}, 'data': df['anti'].round(1).tolist()},
