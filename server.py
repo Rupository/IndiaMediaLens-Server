@@ -208,7 +208,7 @@ async def colour(request: Request, request_data: ColourRequest):
         media_type='text/event-stream'
     )
 
-@ui.page("/historical/visualization/{outlet}/{tone_choice}")
+@ui.page(path="/historical/visualization/{outlet}/{tone_choice}", title="Historical", favicon='IndiaMediaLens Icon.png')
 async def data_visualization(outlet:str, tone_choice: Literal['EST', 'OPP']):
     visualization.create_historical_session(outlet, tone_choice)
 
