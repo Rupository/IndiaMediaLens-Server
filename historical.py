@@ -17,6 +17,7 @@ OUTLET_TO_DOMAIN = {
         "BBC" : "bbc.com", # may drop due to low article counts
         "NDTV" : "ndtv.com",
         "India Today" : "indiatoday.in",
+        "indiatoday.in":"indiatoday.in",
         "Hindustan Times" : "hindustantimes.com",
         "Republic World" : "republicworld.com",
         "The Hindu" : "thehindu.com",
