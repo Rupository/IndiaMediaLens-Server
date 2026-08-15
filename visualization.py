@@ -142,6 +142,14 @@ def get_pie_options(df: pd.DataFrame, domain: str):
             }
         ],
 
+        'tooltip': {
+            'trigger': 'item',
+            'confine': True,
+            'padding': 10,
+            'textStyle': {'fontSize': 12, 'lineHeight': 15},
+            'formatter': '{b}: {c} ({d}%)'
+        },
+
         'legend': {
             'data': ['positive', 'neutral', 'negative'],
             'orient': 'horizontal',

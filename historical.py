@@ -29,6 +29,7 @@ OUTLET_TO_DOMAIN = {
         "The Quint" : "thequint.com",
         "TheWire.in" : "thewire.in", # may need to drop because doesn't seem to show up much in gnews clusters
         "OpIndia" : "opindia.com",
+        "opindia.com" : "opindia.com",
         "DNA India" : "dnaindia.com",
         "Telegraph India" : "telegraphindia.com"
     }
