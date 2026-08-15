@@ -13,6 +13,7 @@ OUTLET_TO_DOMAIN = {
         "Times Now": "timesnownews.com",
         "The Economic Times" : "economictimes.indiatimes.com",
         "economictimes.indiatimes.com":"economictimes.indiatimes.com",
+        "economictimes.com":"economictimes.indiatimes.com",
         "india.com" : "india.com",
         "Zee News" : "zeenews.india.com",
         "BBC" : "bbc.com", # may drop due to low article counts
