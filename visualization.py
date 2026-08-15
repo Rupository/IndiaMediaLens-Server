@@ -147,7 +147,7 @@ def get_pie_options(df: pd.DataFrame, domain: str):
             'confine': True,
             'padding': 10,
             'textStyle': {'fontSize': 12, 'lineHeight': 15},
-            'formatter': '({d}%)'
+            'formatter': '{d}%'
         },
 
         'legend': {
