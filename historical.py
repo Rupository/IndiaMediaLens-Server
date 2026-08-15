@@ -12,6 +12,7 @@ OUTLET_TO_DOMAIN = {
         "timesofindia.indiatimes.com": "timesofindia.indiatimes.com",
         "Times Now": "timesnownews.com",
         "The Economic Times" : "economictimes.indiatimes.com",
+        "economictimes.indiatimes.com":"economictimes.indiatimes.com",
         "india.com" : "india.com",
         "Zee News" : "zeenews.india.com",
         "BBC" : "bbc.com", # may drop due to low article counts
@@ -21,6 +22,7 @@ OUTLET_TO_DOMAIN = {
         "Hindustan Times" : "hindustantimes.com",
         "Republic World" : "republicworld.com",
         "The Hindu" : "thehindu.com",
+        "thehindu.com":"thehindu.com",
         "CNN" : "cnn.com", # may drop due to low article counts
         "The Indian Express" : "indianexpress.com",
         "ThePrint" : "theprint.in",
@@ -28,10 +30,12 @@ OUTLET_TO_DOMAIN = {
         "Firstpost" : "firstpost.com",
         "The News Minute" : "thenewsminute.com",
         "The Quint" : "thequint.com",
+        "thequint.com":"thequint.com",
         "TheWire.in" : "thewire.in", # may need to drop because doesn't seem to show up much in gnews clusters
         "OpIndia" : "opindia.com",
         "opindia.com" : "opindia.com",
         "DNA India" : "dnaindia.com",
+        "dnaindia.com":"dnaindia.com",
         "Telegraph India" : "telegraphindia.com"
     }
 
