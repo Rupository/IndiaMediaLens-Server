@@ -21,12 +21,14 @@ OUTLET_TO_DOMAIN = {
         "India Today" : "indiatoday.in",
         "indiatoday.in":"indiatoday.in",
         "Hindustan Times" : "hindustantimes.com",
+        "hindustantimes.com":"hindustantimes.com",
         "Republic World" : "republicworld.com",
         "The Hindu" : "thehindu.com",
         "thehindu.com":"thehindu.com",
         "CNN" : "cnn.com", # may drop due to low article counts
         "The Indian Express" : "indianexpress.com",
         "ThePrint" : "theprint.in",
+        "theprint.in":"theprint.in",
         "Rediff MoneyWiz" : "rediff.com", # odd lising of rediff on gnews, may need to be dropped
         "Firstpost" : "firstpost.com",
         "The News Minute" : "thenewsminute.com",
@@ -37,7 +39,7 @@ OUTLET_TO_DOMAIN = {
         "opindia.com" : "opindia.com",
         "DNA India" : "dnaindia.com",
         "dnaindia.com":"dnaindia.com",
-        "Telegraph India" : "telegraphindia.com"
+        "Telegraph India" : "telegraphindia.com",
     }
 
 def source_correction(row):
