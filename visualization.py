@@ -372,6 +372,7 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
 
     with ui.row().classes('w-full justify-center'):
         ui.markdown(f"#### **{outlet}**").style('font-family: "Quicksand";')
+        ui.markdown(f"(for **{tone_choice}** entities)").style('font-family: "Quicksand";')
 
         with ui.tabs().classes('w-full rounded-lg') as tabs:
             #graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
