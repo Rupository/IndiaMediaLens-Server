@@ -371,9 +371,7 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
     ''')
 
     with ui.row().classes('w-full justify-center'):
-        with ui.column().classes('items-center'):
-            ui.markdown(f"#### **{outlet}**").style('font-family: "Quicksand";')
-            ui.markdown(f"(for **{tone_choice}** entities)").style('font-family: "Quicksand";')
+        ui.markdown(f"#### **{outlet}**").style('font-family: "Quicksand";')
 
         with ui.tabs().classes('w-full rounded-lg') as tabs:
             #graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
@@ -409,6 +407,8 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
                     bar_spinner.set_visibility(False)
 
         with ui.column().classes('w-full mt-2'):
+            ui.markdown(f"(for **{tone_choice}** entities)").style('font-family: "Quicksand";').classes('items-center no-wrap self-center')
+
             with ui.row().classes('items-center no-wrap self-center'):
                 ui.select(options=MONTHS, label='Start Month', value=MONTHS[0]).classes('w-32').bind_value(selections, 'start_month').style('font-family: "Quicksand";')
                 ui.select(options=YEARS, label='Start Year', value=YEARS[0]).classes('w-32').bind_value(selections, 'start_year').style('font-family: "Quicksand";')
