@@ -10,10 +10,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
 import logging
+from logging.handlers import RotatingFileHandler
+
+
+NEWSPAPER3K_CACHE = '/tmp/.newspaper_scraper/article_resources'
+
+handler = RotatingFileHandler('runs.log', maxBytes=1024, backupCount=3)
 
 logging.basicConfig(
-    filename='runs.log',
-    filemode='a',
+    handlers=[handler],
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
@@ -60,6 +65,8 @@ config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) App
 config.request_timeout = 20
 
 def parse_url(url) -> str | None:
+    os.makedirs(NEWSPAPER3K_CACHE, exist_ok=True)
+
     try: # first attempt
         article = Article(url)
         article.download()
