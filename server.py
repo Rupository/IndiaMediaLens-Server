@@ -44,7 +44,7 @@ class ErrorResponse(BaseModel):
 def get_ip(request:Request):
     return request.headers.get("CF-Connecting-IP")
 
-api = FastAPI(title="IndiaMediaLens Server API", version="0.1.6")
+api = FastAPI(title="IndiaMediaLens Server API", version="0.1.7")
 
 limiter = Limiter(key_func=get_ip)
 api.state.limiter = limiter
@@ -94,8 +94,8 @@ async def queued_pipeline(request_stories: list[dict[str, str]], request_choice:
 
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
         async with PHASE_NER:
-            queue.put_nowait({"status": "running", "msg": f"Performing NER on {len(parsed_stories)} Articles (3/4)"})
-            spinner.update(task_id, advance=1, description=f'Performing NER on {len(parsed_stories)} Articles (3/4)')
+            queue.put_nowait({"status": "running", "msg": f"Identifying {request_choice} Entities in {len(parsed_stories)} Articles (3/4)"})
+            spinner.update(task_id, advance=1, description=f'Identifying {request_choice} Entities in {len(parsed_stories)} Articles (3/4)')
             logging.info(f"Performing NER on {len(parsed_stories)} Articles (3/4)")
             data, story_datapoints_tracker = await asyncio.to_thread(ner_block, parsed_stories, request_choice)
         

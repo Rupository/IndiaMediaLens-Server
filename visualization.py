@@ -407,6 +407,8 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
                     bar_spinner.set_visibility(False)
 
         with ui.column().classes('w-full mt-2'):
+            ui.markdown(f"[ Viewing **{tone_choice}** Entities ]").style('font-family: "Quicksand"; margin-top: 0; margin-bottom: 0;').classes('items-center no-wrap self-center')
+
             with ui.row().classes('items-center no-wrap self-center'):
                 ui.select(options=MONTHS, label='Start Month', value=MONTHS[0]).classes('w-32').bind_value(selections, 'start_month').style('font-family: "Quicksand";')
                 ui.select(options=YEARS, label='Start Year', value=YEARS[0]).classes('w-32').bind_value(selections, 'start_year').style('font-family: "Quicksand";')

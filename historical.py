@@ -10,36 +10,56 @@ OUTLET_TO_DOMAIN = {
         "The Times of India" : "timesofindia.indiatimes.com",
         "Times of India" : "timesofindia.indiatimes.com",
         "timesofindia.indiatimes.com": "timesofindia.indiatimes.com",
-        "Times Now": "timesnownews.com",
+        #"Times Now": "timesnownews.com",
         "The Economic Times" : "economictimes.indiatimes.com",
         "economictimes.indiatimes.com":"economictimes.indiatimes.com",
         "economictimes.com":"economictimes.indiatimes.com",
+
         "india.com" : "india.com",
+        "India.com" : "india.com",
+
         "Zee News" : "zeenews.india.com",
-        "BBC" : "bbc.com", # may drop due to low article counts
-        "NDTV" : "ndtv.com",
+        "zeenews.india.com":"zeenews.india.com",
+        #"BBC" : "bbc.com",
+        #"NDTV" : "ndtv.com",
         "India Today" : "indiatoday.in",
         "indiatoday.in":"indiatoday.in",
+
         "Hindustan Times" : "hindustantimes.com",
         "hindustantimes.com":"hindustantimes.com",
-        "Republic World" : "republicworld.com",
+
+        #"Republic World" : "republicworld.com",
+        #"republicworld.com":"republicworld.com",
+
         "The Hindu" : "thehindu.com",
         "thehindu.com":"thehindu.com",
-        "CNN" : "cnn.com", # may drop due to low article counts
+
+        #"CNN" : "cnn.com",
         "The Indian Express" : "indianexpress.com",
+        "indianexpress.com":"indianexpress.com",
+
         "ThePrint" : "theprint.in",
         "theprint.in":"theprint.in",
-        "Rediff MoneyWiz" : "rediff.com", # odd lising of rediff on gnews, may need to be dropped
+
+        "Rediff MoneyWiz" : "rediff.com",
+        "rediff.com":"rediff.com",
+        "Rediff":"rediff.com",
+
         "Firstpost" : "firstpost.com",
-        "The News Minute" : "thenewsminute.com",
+        "firstpost.com":"firstpost.com",
+
+        #"The News Minute" : "thenewsminute.com",
         "The Quint" : "thequint.com",
         "thequint.com":"thequint.com",
-        "TheWire.in" : "thewire.in", # may need to drop because doesn't seem to show up much in gnews clusters
+
+        #"TheWire.in" : "thewire.in",
+        #"thewire.in":"thewire.in",
         "OpIndia" : "opindia.com",
         "opindia.com" : "opindia.com",
+
         "DNA India" : "dnaindia.com",
         "dnaindia.com":"dnaindia.com",
-        "Telegraph India" : "telegraphindia.com",
+        #"Telegraph India" : "telegraphindia.com",
     }
 
 def source_correction(row):
