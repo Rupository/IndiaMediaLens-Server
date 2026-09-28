@@ -9,9 +9,11 @@ from newspaper.article import ArticleException
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
+import logging
 from logger import setup_logging
 
 NEWSPAPER3K_CACHE = '/tmp/.newspaper_scraper/article_resources'
+setup_logging()
 
 options = ChromeOptions()
 options.page_load_strategy = 'eager'
