@@ -17,14 +17,9 @@ from nicegui import ui, app
 from datetime import datetime as dt
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from typing import Literal
-import logging
+from logger import setup_logging
 
-logging.basicConfig(
-    filename='runs.log',
-    filemode='a',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+setup_logging()
 
 spinner = Progress(SpinnerColumn(speed=1.5), TextColumn("[bold green]{task.description}"), transient=True)
 

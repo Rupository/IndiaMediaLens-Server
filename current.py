@@ -9,19 +9,9 @@ from newspaper.article import ArticleException
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
-import logging
-from logging.handlers import RotatingFileHandler
-
+from logger import setup_logging
 
 NEWSPAPER3K_CACHE = '/tmp/.newspaper_scraper/article_resources'
-
-handler = RotatingFileHandler('runs.log', maxBytes=1024, backupCount=3)
-
-logging.basicConfig(
-    handlers=[handler],
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 options = ChromeOptions()
 options.page_load_strategy = 'eager'
@@ -65,7 +55,6 @@ config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) App
 config.request_timeout = 20
 
 def parse_url(url) -> str | None:
-    os.makedirs(NEWSPAPER3K_CACHE, exist_ok=True)
 
     try: # first attempt
         article = Article(url)
@@ -145,6 +134,8 @@ def decode_url(url:str):
     return gnewsdecoder(url)['decoded_url']
 
 def parse_stories_parallel(stories):
+    os.makedirs(NEWSPAPER3K_CACHE, exist_ok=True)
+
     future_to_story = {
         THREAD_EXEC.submit(parse_url, story['url']): story 
         for story in stories
