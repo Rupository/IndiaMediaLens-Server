@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.10.*"
 
 [[package]]
@@ -2312,7 +2312,7 @@ wheels = [
 
 [[package]]
 name = "viewfinder-server"
-version = "0.1.1"
+version = "0.1.4"
 source = { virtual = "." }
 dependencies = [
     { name = "asyncio" },

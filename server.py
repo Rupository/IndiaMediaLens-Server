@@ -1,6 +1,7 @@
 import os
 import gc
 import asyncio
+import pickle
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import warnings
@@ -74,20 +75,42 @@ def _rate_limit_check(request:Request):
 
 async def queued_pipeline(request_stories: list[dict[str, str]], request_choice: Literal['EST', 'OPP'], queue:asyncio.Queue, task_id,):
     try:
+
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
-        async with PHASE_DECODE:
+
+        if not os.path.exists("data/current/localhost.pkl"):
+
+            async with PHASE_DECODE:
+                queue.put_nowait({"status": "running", "msg": f"Decoding {len(request_stories)} URLs (1/4)"})
+                spinner.update(task_id, advance=1, description=f'Decoding {len(request_stories)} URLs (1/4)')
+                logging.info(f"Decoding {len(request_stories)} URLs (1/4)")
+                decoded_stories = await asyncio.to_thread(decoding_block, request_stories)
+
+            queue.put_nowait({"status": "running", "msg": "Waiting..."})
+            async with PHASE_SCRAPE:
+                queue.put_nowait({"status": "running", "msg": f"Scraping {len(decoded_stories)} Articles (2/4)"})
+                spinner.update(task_id, advance=1, description=f'Scraping {len(decoded_stories)} Articles (2/4)')
+                logging.info(f"Scraping {len(decoded_stories)} Articles (2/4)")
+                parsed_stories = await asyncio.to_thread(scraping_block, decoded_stories)
+
+                with open("data/current/localhost.pkl", "wb") as f:
+                    pickle.dump((parsed_stories, decoded_stories), f)
+
+        else:
+            with open("data/current/localhost.pkl", "rb") as f:
+                parsed_stories, decoded_stories = pickle.load(f)
+
             queue.put_nowait({"status": "running", "msg": f"Decoding {len(request_stories)} URLs (1/4)"})
             spinner.update(task_id, advance=1, description=f'Decoding {len(request_stories)} URLs (1/4)')
             logging.info(f"Decoding {len(request_stories)} URLs (1/4)")
-            decoded_stories = await asyncio.to_thread(decoding_block, request_stories)
+            await asyncio.sleep(5)
 
-        queue.put_nowait({"status": "running", "msg": "Waiting..."})
-        async with PHASE_SCRAPE:
+
             queue.put_nowait({"status": "running", "msg": f"Scraping {len(decoded_stories)} Articles (2/4)"})
             spinner.update(task_id, advance=1, description=f'Scraping {len(decoded_stories)} Articles (2/4)')
             logging.info(f"Scraping {len(decoded_stories)} Articles (2/4)")
-            parsed_stories = await asyncio.to_thread(scraping_block, decoded_stories)
-
+            await asyncio.sleep(5)
+                
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
         async with PHASE_NER:
             queue.put_nowait({"status": "running", "msg": f"Identifying {request_choice} Entities in {len(parsed_stories)} Articles (3/4)"})
@@ -97,8 +120,8 @@ async def queued_pipeline(request_stories: list[dict[str, str]], request_choice:
         
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
         async with PHASE_TONE:
-            queue.put_nowait({"status": "running", "msg": f"Analyzing Sentiments in {len(data)} Sentences (4/4)"})
-            spinner.update(task_id, advance=1, description=f'Analyzing Sentiments in {len(data)} Sentences (4/4)')
+            queue.put_nowait({"status": "running", "msg": f"Analyzing Political Tone in {len(data)} Sentences (4/4)"})
+            spinner.update(task_id, advance=1, description=f'Analyzing Political Tone in {len(data)} Sentences (4/4)')
             logging.info(f"Analyzing Sentiments in {len(data)} Sentences (4/4)")
             data, story_datapoints_tracker, sentiments = await asyncio.to_thread(tone_block, data, story_datapoints_tracker)
 
@@ -122,7 +145,7 @@ async def queued_pipeline(request_stories: list[dict[str, str]], request_choice:
             }
 
         final_count = len([story for story in combined_stanced_data.values() if story['current'] != 'unknown'])
-        queue.put_nowait({"status": "running", "msg": f"Extracted Sentiments for {final_count} Articles"})
+        queue.put_nowait({"status": "running", "msg": f"Extracted Tone for {final_count} Articles"})
         logging.info(f"Extracted Sentiments for {final_count} Articles")
         await asyncio.sleep(3)
 
