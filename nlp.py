@@ -5,6 +5,8 @@ os.environ["OPENBLAS_NUM_THREADS"] = "4"
 os.environ["MKL_NUM_THREADS"] = "4"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "4"
 os.environ["NUMEXPR_NUM_THREADS"] = "4"
+os.environ["HF_HOME"] = "./.hf_cache"
+os.environ["HF_HUB_OFFLINE"] = "1"
 
 import spacy
 from spacy.language import Language
