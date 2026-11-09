@@ -78,38 +78,21 @@ async def queued_pipeline(request_stories: list[dict[str, str]], request_choice:
 
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
 
-        if not os.path.exists("data/current/localhost.pkl"):
-
-            async with PHASE_DECODE:
-                queue.put_nowait({"status": "running", "msg": f"Decoding {len(request_stories)} URLs (1/4)"})
-                spinner.update(task_id, advance=1, description=f'Decoding {len(request_stories)} URLs (1/4)')
-                logging.info(f"Decoding {len(request_stories)} URLs (1/4)")
-                decoded_stories = await asyncio.to_thread(decoding_block, request_stories)
-
-            queue.put_nowait({"status": "running", "msg": "Waiting..."})
-            async with PHASE_SCRAPE:
-                queue.put_nowait({"status": "running", "msg": f"Scraping {len(decoded_stories)} Articles (2/4)"})
-                spinner.update(task_id, advance=1, description=f'Scraping {len(decoded_stories)} Articles (2/4)')
-                logging.info(f"Scraping {len(decoded_stories)} Articles (2/4)")
-                parsed_stories = await asyncio.to_thread(scraping_block, decoded_stories)
-
-                with open("data/current/localhost.pkl", "wb") as f:
-                    pickle.dump((parsed_stories, decoded_stories), f)
-
-        else:
-            with open("data/current/localhost.pkl", "rb") as f:
-                parsed_stories, decoded_stories = pickle.load(f)
-
+        async with PHASE_DECODE:
             queue.put_nowait({"status": "running", "msg": f"Decoding {len(request_stories)} URLs (1/4)"})
             spinner.update(task_id, advance=1, description=f'Decoding {len(request_stories)} URLs (1/4)')
             logging.info(f"Decoding {len(request_stories)} URLs (1/4)")
-            await asyncio.sleep(5)
+            decoded_stories = await asyncio.to_thread(decoding_block, request_stories)
 
-
+        queue.put_nowait({"status": "running", "msg": "Waiting..."})
+        async with PHASE_SCRAPE:
             queue.put_nowait({"status": "running", "msg": f"Scraping {len(decoded_stories)} Articles (2/4)"})
             spinner.update(task_id, advance=1, description=f'Scraping {len(decoded_stories)} Articles (2/4)')
             logging.info(f"Scraping {len(decoded_stories)} Articles (2/4)")
-            await asyncio.sleep(5)
+            parsed_stories = await asyncio.to_thread(scraping_block, decoded_stories)
+
+            with open("data/current/localhost.pkl", "wb") as f:
+                pickle.dump((parsed_stories, decoded_stories), f)
                 
         queue.put_nowait({"status": "running", "msg": "Waiting..."})
         async with PHASE_NER:

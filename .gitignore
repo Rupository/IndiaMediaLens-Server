@@ -1,3 +1,7 @@
+# Local caches
+.uv_cache
+.hf_cache
+
 # Logging
 runs.log*
 
