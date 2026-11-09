@@ -4,7 +4,12 @@ from datetime import datetime as dt
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Any, Optional, Literal
 
-HISTORICAL_DF = None
+DATASET_PATHS = {
+    'elections': 'data/historical/elections_reingest_annotated.parquet',
+    'budget': 'data/historical/budget_reingest_annotated.parquet',
+}
+
+HISTORICAL_DFS = {}
 
 OUTLET_TO_DOMAIN = {
         "The Times of India" : "timesofindia.indiatimes.com",
@@ -77,23 +82,26 @@ def source_correction(row):
     return row
 
 
-def load_global_data():
-    global HISTORICAL_DF
-    if HISTORICAL_DF is None:
-        df = pd.read_parquet('data/historical/elections_reingest_annotated.parquet')
-        df['publish_date'] = pd.to_datetime(df['publish_date'])
-        #df['vectors'] = df['vectors'].apply(parse_nparray_str)
-        df = df.apply(source_correction, axis=1)
+def load_global_data(dataset: Literal['elections', 'budget', 'aggregate'] = 'elections'):
+    if dataset not in HISTORICAL_DFS:
+        if dataset == 'aggregate':
+            df = pd.concat(
+                [load_global_data('elections'), load_global_data('budget')],
+                ignore_index=True,
+            )
+        else:
+            df = pd.read_parquet(DATASET_PATHS[dataset])
+            df['publish_date'] = pd.to_datetime(df['publish_date'])
+            df = df.apply(source_correction, axis=1)
+        HISTORICAL_DFS[dataset] = df
+    return HISTORICAL_DFS[dataset]
 
-        HISTORICAL_DF = df
-    return HISTORICAL_DF
 
-
-def get_cumulative_stance_data(start_date:dt, end_date:dt, tone_choice: Literal['EST', 'OPP']) -> pd.DataFrame:
+def get_cumulative_stance_data(start_date:dt, end_date:dt, tone_choice: Literal['EST', 'OPP'], dataset: Literal['elections', 'budget', 'aggregate'] = 'elections') -> pd.DataFrame:
     if start_date > end_date:
         raise ValueError("start_date must be before or equal to end_date")
     
-    df = load_global_data()
+    df = load_global_data(dataset)
     
     mask = (df['publish_date'] >= start_date) & \
            (df['publish_date'] <= end_date) & \
@@ -116,11 +124,11 @@ def get_cumulative_stance_data(start_date:dt, end_date:dt, tone_choice: Literal[
     outlet_stance = pd.concat([counts, percentages], axis=1)
     return outlet_stance
 
-def get_stance_series(start_date:dt, end_date:dt, scale:str, domain:str, tone_choice: Literal['EST', 'OPP']):
+def get_stance_series(start_date:dt, end_date:dt, scale:str, domain:str, tone_choice: Literal['EST', 'OPP'], dataset: Literal['elections', 'budget', 'aggregate'] = 'elections'):
     if start_date > end_date:
         raise ValueError("start_date must be before or equal to end_date")
     
-    df = load_global_data()
+    df = load_global_data(dataset)
     
     mask = (df['media_name'] == domain) & \
            (df['publish_date'] >= start_date) & \

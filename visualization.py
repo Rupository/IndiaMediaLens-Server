@@ -239,7 +239,7 @@ def get_plot_options(df: pd.DataFrame, scale):
         ]
     }
 
-def reload_graph(outlet: str, chart_element: ui.echart, selections:dict):
+'''def reload_graph(outlet: str, chart_element: ui.echart, selections:dict):
     try:
         start_str = f"{selections['start_month']} {selections['start_year']}"
         end_str = f"{selections['end_month']} {selections['end_year']}"
@@ -274,7 +274,7 @@ def reload_graph(outlet: str, chart_element: ui.echart, selections:dict):
         
     except Exception as e:
         ui.notify(f"Graph Error: {str(e)}", type='negative')
-        print(f"Error: {e}")
+        print(f"Error: {e}")'''
 
 def reload_pie(outlet: str, chart_element: ui.echart, selections:dict, tone_choice: Literal['EST', 'OPP']):
     try:
@@ -303,7 +303,7 @@ def reload_pie(outlet: str, chart_element: ui.echart, selections:dict, tone_choi
             ui.notify("Start date must be before end date!", type='warning')
             return
 
-        df = get_cumulative_stance_data(start_date, end_date, tone_choice)
+        df = get_cumulative_stance_data(start_date, end_date, tone_choice, dataset=selections['dataset'])
         new_options = get_pie_options(df, domain)
         chart_element.options.clear()
         chart_element.options.update(new_options)
@@ -340,14 +340,14 @@ def reload_bar(outlet: str, chart_element: ui.echart, selections:dict, tone_choi
             ui.notify("Start date must be before end date!", type='warning')
             return
 
-        df = get_stance_series(start_date, end_date, scale, domain, tone_choice)
+        df = get_stance_series(start_date, end_date, scale, domain, tone_choice, dataset=selections['dataset'])
         new_options = get_plot_options(df, scale)
         chart_element.options.clear()
         chart_element.options.update(new_options)
 
     except Exception as e:
         ui.notify(f"Plot Error: {str(e)}", type='negative')
-
+        
 
 def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
 
@@ -358,7 +358,8 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
     'start_year': YEARS[0],
     'end_month': MONTHS[-1],
     'end_year': YEARS[-1],
-    'scale': SCALES[-1]
+    'scale': SCALES[-1],
+    'dataset': 'elections',
     }
 
     ui.add_css('''
@@ -375,7 +376,7 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
 
     with ui.row().classes('w-full justify-center'):
         ui.markdown(f"#### **{outlet}**").style('font-family: "Quicksand";')
-
+            
         with ui.tabs().classes('w-full rounded-lg') as tabs:
             #graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
             pie = ui.tab('Pie', label='Pie Chart', icon='sym_r_clock_loader_40').style('font-family: "Quicksand";')
@@ -410,7 +411,14 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
                     bar_spinner.set_visibility(False)
 
         with ui.column().classes('w-full mt-2'):
-            ui.markdown(f"[ Viewing **{deabbreviate[tone_choice]}** Entities ]").style('font-family: "Quicksand"; margin-top: 0; margin-bottom: 0;').classes('items-center no-wrap self-center')
+            ui.markdown(f"[ Viewing **{deabbreviate[tone_choice]}** Entities ]").style('font-family: "Quicksand";').classes('items-center no-wrap self-center -mt-8')
+
+            ui.select(
+                    options={'elections': 'Elections', 'budget': 'Budget', 'aggregate': 'Aggregate'},
+                    value='elections',
+                    label='Topic',
+                    on_change=lambda: handle_reload(outlet, pie_chart, bar_chart, bar_spinner, selections, tone_choice),
+                ).classes('w-32 self-center -mt-5 mb-2').bind_value(selections, 'dataset').style('font-family: "Quicksand";')
 
             with ui.row().classes('items-center no-wrap self-center'):
                 ui.select(options=MONTHS, label='Start Month', value=MONTHS[0]).classes('w-32').bind_value(selections, 'start_month').style('font-family: "Quicksand";')
