@@ -375,12 +375,12 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
     ''')
 
     with ui.row().classes('w-full justify-center'):
-        ui.markdown(f"#### **{outlet}**").style('font-family: "Quicksand";')
+        ui.markdown(f"#### **{outlet}**").style('font-family: "Quicksand", sans-serif;')
             
         with ui.tabs().classes('w-full rounded-lg') as tabs:
             #graph = ui.tab('Graph', label='Similarity', icon='sym_r_bubble_chart')
-            pie = ui.tab('Pie', label='Pie Chart', icon='sym_r_clock_loader_40').style('font-family: "Quicksand";')
-            plot = ui.tab('Plots', label='Time series', icon='sym_r_stacked_bar_chart').style('font-family: "Quicksand";')
+            pie = ui.tab('Pie', label='Pie Chart', icon='sym_r_clock_loader_40').style('font-family: "Quicksand", sans-serif;')
+            plot = ui.tab('Plots', label='Time series', icon='sym_r_stacked_bar_chart').style('font-family: "Quicksand", sans-serif;')
 
         with ui.tab_panels(tabs, value=pie).classes('w-full'):
             '''with ui.tab_panel(graph):
@@ -394,7 +394,7 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
                 
             with ui.tab_panel(pie):
                 with ui.card().classes('w-full p-0 border-2 h-110 relative'):
-                    pie_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full').style('font-family: "Quicksand";')
+                    pie_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full').style('font-family: "Quicksand", sans-serif;')
                     
                     '''pie_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
                         .classes('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10') \
@@ -403,7 +403,7 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
 
             with ui.tab_panel(plot):
                 with ui.card().classes('w-full p-0 border-2 h-110 relative'):
-                    bar_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full').style('font-family: "Quicksand";')
+                    bar_chart = ui.echart({'title': {'text': ''}}).classes('h-full w-full').style('font-family: "Quicksand", sans-serif;')
                     
                     bar_spinner = ui.spinner(size='4em', color='DeepSkyBlue') \
                         .classes('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10') \
@@ -411,25 +411,25 @@ def create_historical_session(outlet:str, tone_choice:Literal['EST', 'OPP']):
                     bar_spinner.set_visibility(False)
 
         with ui.column().classes('w-full mt-2'):
-            ui.markdown(f"[ Viewing **{deabbreviate[tone_choice]}** Entities ]").style('font-family: "Quicksand";').classes('items-center no-wrap self-center -mt-8')
+            ui.markdown(f"[ Viewing **{deabbreviate[tone_choice]}** Entities ]").style('font-family: "Quicksand", sans-serif;').classes('items-center no-wrap self-center -mt-8')
 
             ui.select(
                     options={'elections': 'Elections', 'budget': 'Budget', 'aggregate': 'Aggregate'},
                     value='elections',
                     label='Topic',
                     on_change=lambda: handle_reload(outlet, pie_chart, bar_chart, bar_spinner, selections, tone_choice),
-                ).classes('w-32 self-center -mt-5 mb-2').bind_value(selections, 'dataset').style('font-family: "Quicksand";')
+                ).classes('w-32 self-center -mt-5 mb-2').bind_value(selections, 'dataset').style('font-family: "Quicksand", sans-serif;')
 
             with ui.row().classes('items-center no-wrap self-center'):
-                ui.select(options=MONTHS, label='Start Month', value=MONTHS[0]).classes('w-32').bind_value(selections, 'start_month').style('font-family: "Quicksand";')
-                ui.select(options=YEARS, label='Start Year', value=YEARS[0]).classes('w-32').bind_value(selections, 'start_year').style('font-family: "Quicksand";')
+                ui.select(options=MONTHS, label='Start Month', value=MONTHS[0]).classes('w-32').bind_value(selections, 'start_month').style('font-family: "Quicksand", sans-serif;')
+                ui.select(options=YEARS, label='Start Year', value=YEARS[0]).classes('w-32').bind_value(selections, 'start_year').style('font-family: "Quicksand", sans-serif;')
 
             with ui.row().classes('items-center no-wrap self-center'):
-                ui.select(options=MONTHS, label='End Month', value=MONTHS[-1]).classes('w-32').bind_value(selections, 'end_month').style('font-family: "Quicksand";')
-                ui.select(options=YEARS, label='End Year', value=YEARS[-1]).classes('w-32').bind_value(selections, 'end_year').style('font-family: "Quicksand";')
+                ui.select(options=MONTHS, label='End Month', value=MONTHS[-1]).classes('w-32').bind_value(selections, 'end_month').style('font-family: "Quicksand", sans-serif;')
+                ui.select(options=YEARS, label='End Year', value=YEARS[-1]).classes('w-32').bind_value(selections, 'end_year').style('font-family: "Quicksand", sans-serif";')
 
             with ui.row().classes('items-center no-wrap self-center'):
-                ui.select(options=SCALES, label='Scale', value=SCALES[-1]).classes('w-32 self-center').style('font-family: "Quicksand";').bind_value(selections, 'scale')\
+                ui.select(options=SCALES, label='Scale', value=SCALES[-1]).classes('w-32 self-center').style('font-family: "Quicksand", sans-serif;').bind_value(selections, 'scale')\
                     .bind_value(selections, 'scale')\
                     .bind_enabled_from(tabs, 'value', backward=lambda v: v == 'Plots')
                 ui.button(icon='sym_r_replay', on_click=lambda: handle_reload(outlet,
